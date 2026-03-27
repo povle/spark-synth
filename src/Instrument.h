@@ -15,7 +15,8 @@ struct SynthParams
     float sustain = 0.5f; // Level 0.0-1.0
     float release = 0.5f; // Seconds
     float reverb = 0.0f;
-    float delay_amt = 0.0f;
+    float delay_amp = 0.0f;
+    float delay_freq = 0.0f;
     float custom[4] = {0.5f, 0.5f, 0.5f, 0.5f};
 };
 
@@ -117,8 +118,12 @@ public:
             config_reverb(value * 2.0f, 0.85f, 0.5f, 3000.0f);
             break;
         case 13:
-            params.delay_amt = value;
-            config_echo(1.0f, 250.0f, 500.0f, value * 0.8f, 0.0f);
+            params.delay_freq = value * 2000.0f;
+            config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
+            break;
+        case 14:
+            params.delay_amp = value;
+            config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
             break;
         }
 
@@ -160,18 +165,6 @@ protected:
         // Pair 2: Time to drop to 0.0 (AMY automatically waits for Note Off for the last pair)
         e.eg0_times[2] = r_ms;
         e.eg0_values[2] = 0.0f;
-
-        // e.amp_coefs[0] = 0.0f; // Default is 0,0,1,1 (i.e. the amplitude comes from the note velocity multiplied by by Envelope Generator 0.)
-        // e.amp_coefs[0] = 0.0f;
-        // e.amp_coefs[1] = 1.0f;
-        // e.amp_coefs[1] = 1.0f;
-
-        // e.freq_coefs[0] = 0.0f; // Default is 0,1,0,0,0,0,1 (from note pitch plus pitch_bend)
-        // e.freq_coefs[1] = 1.0f;
-        // e.freq_coefs[2] = 0.0f;
-        // e.freq_coefs[3] = 0.0f;
-        // e.freq_coefs[4] = 0.0f;
-        // e.freq_coefs[5] = 1.0f;
 
         amy_add_event(&e);
     }

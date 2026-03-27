@@ -16,8 +16,8 @@ void HardwareClass::begin()
     cfg.i2s_dout = I2S_DIN_PIN;
     cfg.features.startup_bleep = 1;
     cfg.features.default_synths = 1; // Creates synth 1, 2, 10
-    cfg.features.reverb = 0;         // Disabled - saves CPU/memory
-    cfg.features.echo = 0;           // Disabled - saves CPU/memory
+    cfg.features.reverb = 1;
+    cfg.features.echo = 1;
     cfg.features.chorus = 0;
     cfg.max_oscs = 128;
     cfg.max_voices = 32;
@@ -38,12 +38,6 @@ void HardwareClass::begin()
     amy_event e = amy_default_event();
     e.reset_osc = RESET_AMY;
     amy_add_event(&e);
-
-    // e = amy_default_event();
-    // e.synth = 1;
-    // e.num_voices = 12;
-    // e.patch_number = 1;
-    // amy_add_event(&e);
 
     for (int i = 0; i < 100; i++)
     {
