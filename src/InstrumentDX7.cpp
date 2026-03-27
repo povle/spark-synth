@@ -12,14 +12,12 @@ void InstrumentDX7::start()
     // Allocate voices dynamically when the instrument loads
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 6; // Reduced to 6 to save CPU for FM synthesis
+    e.num_voices = 12;
     e.patch_number = dxPatch;
     amy_add_event(&e);
 
     Serial.printf("  [DX-7] Ready (patch %d)\n", dxPatch);
 }
-
-
 
 void InstrumentDX7::stop()
 {
@@ -28,30 +26,6 @@ void InstrumentDX7::stop()
     e.velocity = 0.0f;
     amy_add_event(&e);
     isActive = false;
-}
-
-void InstrumentDX7::noteOn(uint8_t note, float velocity)
-{
-    if (!isActive)
-        return;
-
-    amy_event e = amy_default_event();
-    e.synth = 1;
-    e.midi_note = note;
-    e.velocity = velocity;
-    amy_add_event(&e);
-}
-
-void InstrumentDX7::noteOff(uint8_t note)
-{
-    if (!isActive)
-        return;
-
-    amy_event e = amy_default_event();
-    e.synth = 1;
-    e.midi_note = note;
-    e.velocity = 0.0f;
-    amy_add_event(&e);
 }
 
 void InstrumentDX7::onCustomPot(uint8_t channel, float value)

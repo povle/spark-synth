@@ -43,12 +43,12 @@ bool ControlsClass::readPot(uint8_t channel, float &value)
     // The multiplier (0.15f) is the smoothing factor.
     // Lower (e.g., 0.05f) = smoother but more lag.
     // Higher (e.g., 0.50f) = faster but more jitter.
-    smoothedValues[channel] = (0.25f * normVal) + (0.75f * smoothedValues[channel]);
+    smoothedValues[channel] = (0.16f * normVal) + (0.84f * smoothedValues[channel]);
 
     // 4. Hysteresis (Deadband threshold)
     // 0.002f gives you ~500 smooth steps of resolution.
     // If it still jitters when resting, increase this to 0.004f.
-    if (abs(smoothedValues[channel] - lastSentValues[channel]) > 0.004f)
+    if (abs(smoothedValues[channel] - lastSentValues[channel]) > 0.005f)
     {
         lastSentValues[channel] = smoothedValues[channel];
         value = lastSentValues[channel];
