@@ -34,6 +34,33 @@ extern "C"
 #define NUM_ROWS 6
 #define NUM_COLS 5
 
+#define DISABLE_SERIAL_OUTPUT 1
+
+#if DISABLE_SERIAL_OUTPUT
+class NullSerial
+{
+public:
+    template <typename... T>
+    void begin(T... args) {}
+    template <typename... T>
+    void print(T... args) {}
+    template <typename... T>
+    void println(T... args) {}
+    template <typename... T>
+    void printf(T... args) {}
+
+    // Stops handleSerialCommand() from freezing
+    int available() { return 0; }
+    int read() { return -1; }
+
+    // Stops while(!Serial) from freezing
+    operator bool() { return true; }
+};
+
+static NullSerial DummySerial;
+#define Serial DummySerial
+#endif
+
 struct KeyEvent
 {
     uint8_t row;
