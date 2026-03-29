@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef HARDWARE_H
 #define HARDWARE_H
 
@@ -5,17 +7,24 @@
 #include <Wire.h>
 #include "ESP_I2S.h"
 #include <Adafruit_MCP23X17.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 extern "C"
 {
 #include <amy.h>
 }
 
-#define I2S_BCK_PIN 6
 #define I2S_LRC_PIN 4
 #define I2S_DIN_PIN 5
+#define I2S_BCK_PIN 6
+
 #define I2C_SDA_PIN 8
 #define I2C_SCL_PIN 9
+
+#define OLED_SDA_PIN 10
+#define OLED_SCL_PIN 11
+
 #define MUX_S0 13
 #define MUX_S1 14
 #define MUX_S2 15
@@ -23,7 +32,7 @@ extern "C"
 #define MUX_SIG 17
 
 #define NUM_ROWS 6
-#define NUM_COLS 8
+#define NUM_COLS 5
 
 struct KeyEvent
 {
@@ -35,25 +44,39 @@ struct KeyEvent
 class HardwareClass
 {
 public:
+    Adafruit_SSD1306 display;
+
+    HardwareClass() : display(128, 64, &Wire1, -1) {}
+
     void scanKeyboard(); // No longer needs to return bool
     bool getNextKeyEvent(uint8_t &row, uint8_t &col, bool &pressed);
     void begin();
     void audioPump();
     uint8_t getMidiNote(uint8_t row, uint8_t col);
 
+    // Button API
+    bool isButtonPressed(uint8_t index);
+    bool wasButtonJustPressed(uint8_t index);
 
 private:
     Adafruit_MCP23X17 mcp;
-    const uint8_t rowPins[NUM_ROWS] = {0, 1, 2, 3, 4, 5};
-    const uint8_t colPins[NUM_COLS] = {8, 9, 10, 11, 12, 13, 14, 15};
+
+    uint8_t rowPins[NUM_ROWS] = {0, 1, 2, 3, 4, 5};   // PA0-PA5
+    uint8_t colPins[NUM_COLS] = {11, 12, 13, 14, 15}; // PB3-PB7
+    uint8_t noteMap[NUM_ROWS][NUM_COLS];
+
+    // The 5 Buttons: PA6(6), PA7(7), PB0(8), PB1(9), PB2(10)
+    uint8_t buttonPins[5] = {6, 10, 7, 9, 8};
+    bool buttonState[5] = {false};
+    bool buttonJustPressed[5] = {false};
+
     bool keyState[NUM_ROWS][NUM_COLS] = {false};
 
-    static const uint8_t QUEUE_SIZE = 32; // Big enough for a keyboard mash
+    static const uint8_t QUEUE_SIZE = 32;
     KeyEvent keyQueue[QUEUE_SIZE];
     uint8_t queueHead = 0;
     uint8_t queueTail = 0;
 
-    uint8_t noteMap[NUM_ROWS][NUM_COLS];
     void initNoteMap();
 };
 

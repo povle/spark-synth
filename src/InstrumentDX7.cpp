@@ -12,7 +12,7 @@ void InstrumentDX7::start()
     // Allocate voices dynamically when the instrument loads
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 12;
+    e.num_voices = 6;
     e.patch_number = dxPatch;
     amy_add_event(&e);
 

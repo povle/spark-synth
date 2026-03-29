@@ -8,5 +8,4 @@ void setup()
 void loop()
 {
     System.update();
-    // NO delay() - breaks audio timing!
 }
