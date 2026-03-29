@@ -157,16 +157,28 @@ void HardwareClass::initNoteMap()
 }
 void HardwareClass::scanKeyboard()
 {
-    // 1. Scan Matrix
+    uint16_t allPins = 0;
+
+    // --- 1. SCAN MATRIX ---
     for (uint8_t r = 0; r < NUM_ROWS; r++)
     {
+        // Drive current row LOW
         mcp.digitalWrite(rowPins[r], LOW);
+
+        // Take a snapshot of all 16 pins on the MCP23017 (Takes ~0.1ms)
+        allPins = mcp.readGPIOAB();
+
         for (uint8_t c = 0; c < NUM_COLS; c++)
         {
-            bool isPressed = (mcp.digitalRead(colPins[c]) == LOW);
+            // Extract the specific column bit from the snapshot
+            // If the bit is 0, the key is pulled LOW (pressed)
+            bool isPressed = ((allPins & (1 << colPins[c])) == 0);
+
             if (isPressed != keyState[r][c])
             {
                 keyState[r][c] = isPressed;
+
+                // Push to the Event Queue
                 uint8_t nextHead = (queueHead + 1) % QUEUE_SIZE;
                 if (nextHead != queueTail)
                 {
@@ -175,13 +187,20 @@ void HardwareClass::scanKeyboard()
                 }
             }
         }
+
+        // Drive row back HIGH before moving to the next one
         mcp.digitalWrite(rowPins[r], HIGH);
     }
 
-    // 2. Scan the 5 Buttons
+    // --- 2. SCAN THE 5 BUTTONS ---
+    // Since the buttons are wired directly to GND (independent of the rows),
+    // their state was accurately captured in 'allPins' during the last row scan.
+    // We can just reuse that exact same snapshot to read them, saving I2C time!
     for (uint8_t b = 0; b < 5; b++)
     {
-        bool isPressed = (mcp.digitalRead(buttonPins[b]) == LOW);
+        // Extract the specific button bit from the snapshot
+        bool isPressed = ((allPins & (1 << buttonPins[b])) == 0);
+
         if (isPressed && !buttonState[b])
         {
             buttonJustPressed[b] = true; // Mark as just fired
@@ -189,7 +208,6 @@ void HardwareClass::scanKeyboard()
         buttonState[b] = isPressed;
     }
 }
-
 bool HardwareClass::getNextKeyEvent(uint8_t &row, uint8_t &col, bool &pressed)
 {
     // If head == tail, the queue is empty

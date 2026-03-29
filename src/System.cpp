@@ -7,7 +7,6 @@ void SystemClass::begin()
     Serial.begin(115200);
     while (!Serial)
         ;
-    delay(1000);
 
     Serial.println("\n========================================");
     Serial.println("  ESP32-S3 AMY Synth (Dual Core)");
