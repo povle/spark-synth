@@ -93,7 +93,7 @@ private:
     uint8_t noteMap[NUM_ROWS][NUM_COLS];
 
     // The 5 Buttons: PA6(6), PA7(7), PB0(8), PB1(9), PB2(10)
-    uint8_t buttonPins[5] = {6, 10, 7, 9, 8};
+    uint8_t buttonPins[5] = {6, 10, 9, 7, 8};
     bool buttonState[5] = {false};
     bool buttonJustPressed[5] = {false};
 

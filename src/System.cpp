@@ -57,7 +57,7 @@ void SystemClass::update()
             if (pressed)
             {
                 // Calculate the note with the CURRENT octave shift
-                uint8_t actualNote = baseNote + (octaveShift * 12);
+                uint8_t actualNote = baseNote + ((octaveShift-1) * 12); // constant offset by 1
 
                 // Save this specific note to the physical key's slot
                 activeNotes[row][col] = actualNote;
@@ -81,7 +81,6 @@ void SystemClass::update()
     }
 
     // 2. PROCESS BUTTONS
-    // Example: Button 0 = Octave Down, Button 1 = Octave Up
     if (Hardware.wasButtonJustPressed(0))
     {
         octaveShift--;
@@ -91,6 +90,16 @@ void SystemClass::update()
     {
         octaveShift++;
         Serial.printf("Octave: %d\n", octaveShift);
+    }
+
+    if (Hardware.wasButtonJustPressed(2))
+    {
+        instruments[currentInstrument]->onPressedButton(2);
+    }
+
+    if (Hardware.wasButtonJustPressed(3))
+    {
+        instruments[currentInstrument]->onPressedButton(3);
     }
 
     // Button 4 (Assuming this is the Joystick Switch) -> Long press to change instrument
@@ -125,19 +134,11 @@ void SystemClass::update()
     // 4. PROCESS JOYSTICK
     float jX, jY;
     Controls.readJoystick(jX, jY);
+    instruments[currentInstrument]->updateJoystick(jX, jY);
 
-    // Send Pitch Bend (jX ranges -1.0 to 1.0)
-    // Convert to AMY ratio (e.g., +/- 2 semitones)
-    float bendRatio = powf(2.0f, (jX * 2.0f) / 12.0f);
-
-    amy_event e = amy_default_event();
-    e.synth = 1; // Send to active synth
-    e.pitch_bend = bendRatio;
-    amy_add_event(&e);
-
-    // 5. UPDATE OLED (Limit to 10 FPS so it doesn't choke the ESP32)
+    // 5. UPDATE OLED (Limit to 5 FPS so it doesn't choke the ESP32)
     static unsigned long lastScreenUpdate = 0;
-    if (millis() - lastScreenUpdate > 100)
+    if (millis() - lastScreenUpdate > 200)
     {
         lastScreenUpdate = millis();
         updateScreen();

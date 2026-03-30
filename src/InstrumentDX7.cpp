@@ -12,7 +12,7 @@ void InstrumentDX7::start()
     // Allocate voices dynamically when the instrument loads
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 6;
+    e.num_voices = 5;
     e.patch_number = dxPatch;
     amy_add_event(&e);
 
@@ -30,22 +30,26 @@ void InstrumentDX7::stop()
 
 void InstrumentDX7::onCustomPot(uint8_t channel, float value)
 {
-    if (channel == 0)
-    {
-        // LATCH FIX: Only send to AMY if the patch number actually changed
-        uint8_t newPatch = 128 + (uint8_t)(value * 127);
-        if (newPatch != dxPatch)
-        {
-            dxPatch = newPatch;
-            amy_event e = amy_default_event();
-            e.synth = 1;
-            e.patch_number = dxPatch;
-            amy_add_event(&e);
-            Serial.printf("  [DX-7] Patch %d\n", dxPatch);
-        }
-    }
     params.custom[channel] = value;
     return;
+}
+
+void InstrumentDX7::onPressedButton(uint8_t button_id)
+{
+    if (button_id == 2) {
+        dxPatch--;
+    }
+    else if (button_id == 3) {
+        dxPatch++;
+    }
+    else {
+        return;
+    }
+    amy_event e = amy_default_event();
+    e.synth = 1;
+    e.patch_number = dxPatch + 128;
+    amy_add_event(&e);
+    Serial.printf("  [DX-7] Patch %d\n", dxPatch);
 }
 
 void InstrumentDX7::sendAdsr()

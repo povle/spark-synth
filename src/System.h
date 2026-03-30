@@ -5,7 +5,7 @@
 #include "Hardware.h"
 #include "Controls.h"
 #include "Instrument.h"
-#include "InstrumentSine.h"
+#include "InstrumentPiano.h"
 #include "InstrumentDX7.h"
 #include "InstrumentJuno.h"
 #include "InstrumentBLE.h"
@@ -32,13 +32,13 @@ private:
     Instrument *instruments[NUM_INSTRUMENTS] = {
         new InstrumentDX7(),
         new InstrumentJuno(),
-        new InstrumentSine(),
+        new InstrumentPiano(),
         new InstrumentBLE()};
 
     const char *instrumentNames[NUM_INSTRUMENTS] = {
         "DX-7",
         "Juno",
-        "Sine Wave",
+        "Piano",
         "BLE MIDI"};
 };
 

@@ -10,9 +10,10 @@ public:
     void start() override;
     void stop() override;
     void onCustomPot(uint8_t channel, float value) override;
+    void onPressedButton(uint8_t button_id) override;
 
 private:
-    uint8_t junoPatch = 1;
+    uint8_t junoPatch = 0;
 };
 
 #endif

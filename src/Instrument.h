@@ -66,6 +66,19 @@ public:
         amy_add_event(&e);
     }
 
+    virtual void onPressedButton(uint8_t button_id) {}
+
+    virtual void updateJoystick(float x, float y) {
+        if (!isActive)
+            return;
+        float bendRatio = powf(2.0f, (x * 2.0f) / 12.0f);
+
+        amy_event e = amy_default_event();
+        e.synth = getSynthChannel();
+        e.pitch_bend = bendRatio;
+        amy_add_event(&e);
+    }
+
     // Standardized Potentiometer Router
     virtual void updatePot(uint8_t channel, float value)
     {
