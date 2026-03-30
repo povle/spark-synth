@@ -7,7 +7,6 @@ void SystemClass::begin()
     Serial.begin(115200);
     while (!Serial)
         ;
-    delay(1000);
 
     Serial.println("\n========================================");
     Serial.println("  ESP32-S3 AMY Synth (Dual Core)");
@@ -38,50 +37,9 @@ void SystemClass::begin()
     Serial.println("========================================\n");
 }
 
+
 void SystemClass::update()
 {
-    Hardware.audioPump();
-    // handleSerialCommand();
-
-    // 1. Scan the hardware to populate the queue
-    Hardware.scanKeyboard();
-
-    // 2. Process ALL pending key events in the queue
-    uint8_t row, col;
-    bool pressed;
-
-    while (Hardware.getNextKeyEvent(row, col, pressed))
-    {
-        uint8_t baseNote = Hardware.getMidiNote(row, col);
-
-        if (baseNote > 0)
-        {
-            if (pressed)
-            {
-                // Calculate the note with the CURRENT octave shift
-                uint8_t actualNote = baseNote + ((octaveShift-1) * 12); // constant offset by 1
-
-                // Save this specific note to the physical key's slot
-                activeNotes[row][col] = actualNote;
-
-                instruments[currentInstrument]->noteOn(actualNote, 0.8f);
-            }
-            else
-            {
-                // Retrieve the EXACT note that was playing on this physical key
-                uint8_t actualNote = activeNotes[row][col];
-
-                if (actualNote > 0)
-                {
-                    instruments[currentInstrument]->noteOff(actualNote);
-
-                    // Clear the slot
-                    activeNotes[row][col] = 0;
-                }
-            }
-        }
-    }
-
     // 2. PROCESS BUTTONS
     if (Hardware.wasButtonJustPressed(0))
     {
@@ -147,6 +105,48 @@ void SystemClass::update()
     }
 
     instruments[currentInstrument]->update();
+}
+
+void SystemClass::inputTask()
+{
+    // 1. Scan the hardware to populate the queue
+    Hardware.scanKeyboard();
+
+    // 2. Process ALL pending key events in the queue
+    uint8_t row, col;
+    bool pressed;
+
+    while (Hardware.getNextKeyEvent(row, col, pressed))
+    {
+        uint8_t baseNote = Hardware.getMidiNote(row, col);
+
+        if (baseNote > 0)
+        {
+            if (pressed)
+            {
+                // Calculate the note with the CURRENT octave shift
+                uint8_t actualNote = baseNote + ((octaveShift - 1) * 12); // constant offset by 1
+
+                // Save this specific note to the physical key's slot
+                activeNotes[row][col] = actualNote;
+
+                instruments[currentInstrument]->noteOn(actualNote, 0.8f);
+            }
+            else
+            {
+                // Retrieve the EXACT note that was playing on this physical key
+                uint8_t actualNote = activeNotes[row][col];
+
+                if (actualNote > 0)
+                {
+                    instruments[currentInstrument]->noteOff(actualNote);
+
+                    // Clear the slot
+                    activeNotes[row][col] = 0;
+                }
+            }
+        }
+    }
 }
 
 void SystemClass::updateScreen()

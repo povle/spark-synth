@@ -22,6 +22,7 @@ public:
     void listInstruments();
     void handleSerialCommand();
     void updateScreen();
+    void inputTask();
 
     uint8_t getCurrentInstrument() { return currentInstrument; }
 
