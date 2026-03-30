@@ -41,7 +41,7 @@ void SystemClass::begin()
 void SystemClass::update()
 {
     Hardware.audioPump();
-    handleSerialCommand();
+    // handleSerialCommand();
 
     // 1. Scan the hardware to populate the queue
     Hardware.scanKeyboard();

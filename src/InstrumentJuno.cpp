@@ -37,10 +37,10 @@ void InstrumentJuno::onCustomPot(uint8_t channel, float value)
 
 void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
 {
-    u8g2.setFont(u8g2_font_tenthinguys_tf);
+    u8g2.setFont(u8g2_font_tentfatguys_tf);
     // u8g2.setCursor(0, y_offset + 18);
     // u8g2.printf("INT %d", patch + 1);
-    u8g2.setCursor(0, y_offset + 18);
+    u8g2.setCursor(0, y_offset + 32);
     u8g2.print(juno_patch_names[patch]);
 }
 

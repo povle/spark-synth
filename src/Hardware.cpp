@@ -39,10 +39,10 @@ void HardwareClass::begin()
     e.reset_osc = RESET_AMY;
     amy_add_event(&e);
 
-    for (int i = 0; i < 100; i++)
-    {
-        amy_update();
-    }
+    // for (int i = 0; i < 100; i++)
+    // {
+    //     amy_update();
+    // }
 
     Serial.println("   Voices allocated\n");
 
@@ -83,7 +83,7 @@ void HardwareClass::begin()
 
 void HardwareClass::audioPump()
 {
-    amy_update(); // AMY handles I2S internally
+    // amy_update(); // AMY handles I2S internally
 }
 
 void HardwareClass::initNoteMap()

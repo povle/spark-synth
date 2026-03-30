@@ -14,7 +14,7 @@ void InstrumentDX7::start()
     amy_event e = amy_default_event();
     e.synth = 1;
     e.num_voices = 5;
-    e.patch_number = patch;
+    e.patch_number = patch + 128;
     amy_add_event(&e);
 
     Serial.printf("  [DX-7] Ready (patch %d)\n", patch);
