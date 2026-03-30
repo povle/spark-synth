@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include <U8g2lib.h>
 extern "C"
 {
 #include <amy.h>
@@ -42,6 +43,8 @@ public:
     }
 
     virtual void update() {}
+
+    virtual void drawUI(U8G2 &u8g2, uint8_t y_offset) {}
 
     // Default Note On/Off (Uses AMY's synth allocator)
     virtual void noteOn(uint8_t note, float velocity)

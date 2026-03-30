@@ -12,9 +12,10 @@ public:
     void onCustomPot(uint8_t channel, float value) override;
     void sendAdsr() override;
     void onPressedButton(uint8_t button_id) override;
+    void drawUI(U8G2 &u8g2, uint8_t y_offset) override;
 
 private:
-    uint8_t dxPatch = 0;
+    uint8_t patch = 0;
 };
 
 #endif

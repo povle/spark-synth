@@ -1,4 +1,5 @@
 #include "InstrumentDX7.h"
+#include "dx7_patches.h"
 
 void InstrumentDX7::init()
 {
@@ -13,10 +14,10 @@ void InstrumentDX7::start()
     amy_event e = amy_default_event();
     e.synth = 1;
     e.num_voices = 5;
-    e.patch_number = dxPatch;
+    e.patch_number = patch;
     amy_add_event(&e);
 
-    Serial.printf("  [DX-7] Ready (patch %d)\n", dxPatch);
+    Serial.printf("  [DX-7] Ready (patch %d)\n", patch);
 }
 
 void InstrumentDX7::stop()
@@ -34,22 +35,33 @@ void InstrumentDX7::onCustomPot(uint8_t channel, float value)
     return;
 }
 
+void InstrumentDX7::drawUI(U8G2 &u8g2, uint8_t y_offset)
+{
+    u8g2.setFont(u8g2_font_spleen12x24_mu);
+    u8g2.setCursor(0, y_offset + 18);
+    u8g2.printf("INT %d", patch+1);
+    u8g2.setCursor(0, y_offset + 40);
+    u8g2.print(dx7_patch_names[patch]);
+}
+
 void InstrumentDX7::onPressedButton(uint8_t button_id)
 {
     if (button_id == 2) {
-        dxPatch--;
+        if (patch > 0)
+            patch--;
     }
     else if (button_id == 3) {
-        dxPatch++;
+        if (patch < 127)
+            patch++;
     }
     else {
         return;
     }
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.patch_number = dxPatch + 128;
+    e.patch_number = patch + 128;
     amy_add_event(&e);
-    Serial.printf("  [DX-7] Patch %d\n", dxPatch);
+    Serial.printf("  [DX-7] Patch %d\n", patch);
 }
 
 void InstrumentDX7::sendAdsr()

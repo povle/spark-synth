@@ -23,6 +23,8 @@ public:
     void updateJoystick(float x, float y) override;
     void onPressedButton(uint8_t button_id) override;
 
+    void drawUI(U8G2 &u8g2, uint8_t y_offset) override;
+
     bool isConnected = false;
 
 private:

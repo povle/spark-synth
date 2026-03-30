@@ -19,7 +19,7 @@ void HardwareClass::begin()
     cfg.features.reverb = 1;
     cfg.features.echo = 1;
     cfg.features.chorus = 0;
-    cfg.max_oscs = 128;
+    cfg.max_oscs = 96;
     cfg.max_voices = 32;
     cfg.max_synths = 16;
     cfg.midi = AMY_MIDI_IS_NONE;
@@ -46,21 +46,12 @@ void HardwareClass::begin()
 
     Serial.println("   Voices allocated\n");
 
-    Wire1.begin(OLED_SDA_PIN, OLED_SCL_PIN);
-    Wire1.setClock(400000);
-    if (display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-    {
-        display.clearDisplay();
-        display.setTextColor(SSD1306_WHITE);
-        display.display();
-        Serial.println("   OLED OK");
-    }
 
     // === MCP23017 ===
-    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
-    Wire.setClock(400000);
+    Wire1.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+    Wire1.setClock(400000);
     // Wire.setClock(100000);
-    if (mcp.begin_I2C(0x20, &Wire))
+    if (mcp.begin_I2C(0x20, &Wire1))
     {
         for (uint8_t r = 0; r < NUM_ROWS; r++)
         {

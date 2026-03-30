@@ -165,3 +165,13 @@ void InstrumentBLE::onPressedButton(uint8_t button_id)
     // If you add an onReleasedButton() method later,
     // you can send the same CC with a value of 0.
 }
+
+void InstrumentBLE::drawUI(U8G2 &u8g2, uint8_t y_offset)
+{
+    u8g2.setFont(u8g2_font_profont29_mf);
+    u8g2.setCursor(0, y_offset + 18);
+    if (!isConnected || !pCharacteristic)
+        u8g2.print("Awaiting BLE...");
+    else
+        u8g2.print("Connected");
+}

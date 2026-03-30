@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include "Hardware.h"
+#include "DisplayManager.h"
 #include "Controls.h"
 #include "Instrument.h"
 #include "InstrumentPiano.h"
@@ -10,7 +11,7 @@
 #include "InstrumentJuno.h"
 #include "InstrumentBLE.h"
 
-#define NUM_INSTRUMENTS 4
+#define NUM_INSTRUMENTS 3
 
 class SystemClass
 {
@@ -28,17 +29,18 @@ private:
     uint8_t currentInstrument = 0;
     uint8_t activeNotes[NUM_ROWS][NUM_COLS] = {0};
     int octaveShift = 0;
+    DisplayManager display;
 
     Instrument *instruments[NUM_INSTRUMENTS] = {
         new InstrumentDX7(),
         new InstrumentJuno(),
-        new InstrumentPiano(),
+        // new InstrumentPiano(),
         new InstrumentBLE()};
 
     const char *instrumentNames[NUM_INSTRUMENTS] = {
         "DX-7",
         "Juno",
-        "Piano",
+        // "Piano",
         "BLE MIDI"};
 };
 

@@ -7,6 +7,7 @@ void SystemClass::begin()
     Serial.begin(115200);
     while (!Serial)
         ;
+    delay(1000);
 
     Serial.println("\n========================================");
     Serial.println("  ESP32-S3 AMY Synth (Dual Core)");
@@ -20,6 +21,7 @@ void SystemClass::begin()
 
     Hardware.begin();
     Controls.begin();
+    display.begin();
 
     Serial.println("Initializing instruments...");
     for (uint8_t i = 0; i < NUM_INSTRUMENTS; i++)
@@ -142,7 +144,6 @@ void SystemClass::update()
     {
         lastScreenUpdate = millis();
         updateScreen();
-        // Serial.printf("jX = %f jY = %f\n", jX, jY);
     }
 
     instruments[currentInstrument]->update();
@@ -150,17 +151,7 @@ void SystemClass::update()
 
 void SystemClass::updateScreen()
 {
-    Hardware.display.clearDisplay();
-
-    Hardware.display.setCursor(0, 0);
-    Hardware.display.setTextSize(2);
-    Hardware.display.println(instrumentNames[currentInstrument]);
-
-    Hardware.display.setCursor(0, 24);
-    Hardware.display.setTextSize(1);
-    Hardware.display.printf("Octave: %+d\n", octaveShift);
-
-    Hardware.display.display();
+    display.update(instruments[currentInstrument], octaveShift, temperatureRead(), 100);
 }
 
 void SystemClass::switchInstrument(uint8_t index)

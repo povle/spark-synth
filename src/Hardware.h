@@ -71,10 +71,6 @@ struct KeyEvent
 class HardwareClass
 {
 public:
-    Adafruit_SSD1306 display;
-
-    HardwareClass() : display(128, 64, &Wire1, -1) {}
-
     void scanKeyboard(); // No longer needs to return bool
     bool getNextKeyEvent(uint8_t &row, uint8_t &col, bool &pressed);
     void begin();
