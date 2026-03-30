@@ -19,7 +19,7 @@ void HardwareClass::begin()
     cfg.features.reverb = 1;
     cfg.features.echo = 1;
     cfg.features.chorus = 0;
-    cfg.max_oscs = 96;
+    cfg.max_oscs = 200;
     cfg.max_voices = 32;
     cfg.max_synths = 16;
     cfg.midi = AMY_MIDI_IS_NONE;

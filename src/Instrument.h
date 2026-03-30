@@ -211,4 +211,30 @@ protected:
         sendAdsr();
         sendFilter();
     }
+
+    void drawWrappedPatchName(U8G2 &u8g2, uint8_t x, uint8_t y, const char *flashPtr)
+    {
+        char buffer[48];
+        // Copy from PROGMEM to local RAM buffer
+        strncpy_P(buffer, flashPtr, 47);
+        buffer[47] = '\0';
+
+        // Find the delimiter
+        char *separator = strchr(buffer, '\n');
+
+        if (separator != NULL)
+        {
+            // We found a split!
+            *separator = '\0';           // Terminate line 1 at the pipe
+            char *line2 = separator + 1; // Line 2 starts after the pipe
+
+            u8g2.drawStr(x, y, buffer);     // Draw first line
+            u8g2.drawStr(x, y + 18, line2);
+        }
+        else
+        {
+            // No split needed
+            u8g2.drawStr(x, y, buffer);
+        }
+    }
 };

@@ -168,10 +168,10 @@ void InstrumentBLE::onPressedButton(uint8_t button_id)
 
 void InstrumentBLE::drawUI(U8G2 &u8g2, uint8_t y_offset)
 {
-    u8g2.setFont(u8g2_font_crox5hb_tf);
-    u8g2.setCursor(0, y_offset + 20);
+    u8g2.setFont(u8g2_font_open_iconic_all_4x_t);
+    u8g2.setCursor(24, y_offset + 40);
     if (!isConnected || !pCharacteristic)
-        u8g2.print("Awaiting BLE...");
+        u8g2.print("^\x009b");
     else
-        u8g2.print("Connected");
+        u8g2.print("^s");
 }

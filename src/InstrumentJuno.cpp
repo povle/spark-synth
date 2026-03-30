@@ -40,8 +40,9 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
     u8g2.setFont(u8g2_font_tenfatguys_tf);
     // u8g2.setCursor(0, y_offset + 18);
     // u8g2.printf("INT %d", patch + 1);
-    u8g2.setCursor(0, y_offset + 32);
-    u8g2.print(juno_patch_names[patch]);
+    u8g2.setCursor(0, y_offset + 18);
+    // u8g2.print(juno_patch_names[patch]);
+    drawWrappedPatchName(u8g2, 0, y_offset + 18, juno_patch_names[patch]);
 }
 
 void InstrumentJuno::onPressedButton(uint8_t button_id)
