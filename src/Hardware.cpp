@@ -149,6 +149,11 @@ void HardwareClass::updateBattery()
     }
 }
 
+float HardwareClass::getBatteryVoltage()
+{
+    return _smoothedBatteryVolts;
+}
+
 int HardwareClass::getBatteryPercentage()
 {
     if (_smoothedBatteryVolts < 0.0f)

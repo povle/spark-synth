@@ -149,7 +149,7 @@ void SystemClass::inputTask()
 
 void SystemClass::updateScreen()
 {
-    display.update(instruments[currentInstrument], octaveShift, temperatureRead(), Hardware.getBatteryPercentage());
+    display.update(instruments[currentInstrument], octaveShift, temperatureRead(), Hardware.getBatteryVoltage());
 }
 
 void SystemClass::switchInstrument(uint8_t index)

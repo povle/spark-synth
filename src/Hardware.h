@@ -86,6 +86,7 @@ public:
 
     void updateBattery();
     int getBatteryPercentage();
+    float getBatteryVoltage();
 
 private:
     Adafruit_MCP23X17 mcp;

@@ -20,7 +20,7 @@ public:
     }
 
     // Takes system states and a pointer to the active instrument
-    void update(Instrument *activeInst, int octave, float cpuTemp, int batteryPct)
+    void update(Instrument *activeInst, int octave, float cpuTemp, float batteryV)
     {
         u8g2.clearBuffer();
 
@@ -41,13 +41,15 @@ public:
 
         int startX = (screenWidth - textWidth) / 2;
 
+        u8g2.setFont(u8g2_font_resoledbold_tr);
         u8g2.setCursor(startX, 7);
         u8g2.print(instName);
 
-        u8g2.setCursor(105, 7);
-        if (batteryPct >= 0)
+        u8g2.setFont(u8g2_font_5x7_tr);
+        u8g2.setCursor(100, 7);
+        if (batteryV >= 0)
         {
-            u8g2.printf("%d%%", batteryPct);
+            u8g2.printf("%.2fV", batteryV);
         }
         else
         {
