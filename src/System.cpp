@@ -25,16 +25,12 @@ void SystemClass::begin()
     Serial.println("Initializing instruments...");
     for (uint8_t i = 0; i < NUM_INSTRUMENTS; i++)
     {
-        Serial.printf("  [%d] %s\n", i, instrumentNames[i]);
         instruments[i]->init();
+        Serial.printf("  [%d] %s\n", i, instruments[i]->getName());
     }
     Serial.println();
 
     switchInstrument(0);
-
-    Serial.println("========================================");
-    Serial.println("  READY! Commands: inst, list, test");
-    Serial.println("========================================\n");
 }
 
 
@@ -166,7 +162,7 @@ void SystemClass::switchInstrument(uint8_t index)
     currentInstrument = index;
     instruments[currentInstrument]->start();
 
-    Serial.printf("\n✅ Switched to: %s\n\n", instrumentNames[index]);
+    Serial.printf("\n✅ Switched to: %s\n\n", instruments[currentInstrument]->getName());
 }
 
 void SystemClass::listInstruments()
@@ -174,7 +170,7 @@ void SystemClass::listInstruments()
     Serial.println("\nInstruments:");
     for (uint8_t i = 0; i < NUM_INSTRUMENTS; i++)
     {
-        Serial.printf("  [%d] %s%s\n", i, instrumentNames[i],
+        Serial.printf("  [%d] %s%s\n", i, instruments[currentInstrument]->getName(),
                       (i == currentInstrument) ? " ←" : "");
     }
     Serial.println();

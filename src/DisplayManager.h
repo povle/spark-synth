@@ -32,13 +32,17 @@ public:
 
         // Left: Octave
         u8g2.setCursor(2, 7);
-        u8g2.printf("%.1fC", cpuTemp);
-
-
-        // Center: CPU Temp
-        // Centers text roughly. (128/2) - (width/2)
-        u8g2.setCursor(50, 7);
         u8g2.printf("OCT:%+d", octave);
+
+        int screenWidth = u8g2.getDisplayWidth();
+
+        const char *instName = activeInst->getName();
+        int textWidth = u8g2.getStrWidth(instName);
+
+        int startX = (screenWidth - textWidth) / 2;
+
+        u8g2.setCursor(startX, 7);
+        u8g2.print(instName);
 
         u8g2.setCursor(105, 7);
         if (batteryPct >= 0)

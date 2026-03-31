@@ -13,7 +13,7 @@ void InstrumentJuno::start()
     // Allocate voices dynamically when the instrument loads
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 5;
+    e.num_voices = 12;
     e.patch_number = patch;
     amy_add_event(&e);
 

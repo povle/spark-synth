@@ -8,7 +8,7 @@ void HardwareClass::begin()
     Serial.printf("   Free Heap: %lu bytes\n", ESP.getFreeHeap());
     Serial.printf("   CPU Cores: %d\n", ESP.getChipCores());
 
-    // === AMY Config (from AMY_MIDI_Synth.ino + AMY_USB_Host_MIDI) ===
+    // === AMY Config ===
     amy_config_t cfg = amy_default_config();
     cfg.audio = AMY_AUDIO_IS_I2S;
     cfg.i2s_bclk = I2S_BCK_PIN;

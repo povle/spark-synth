@@ -10,6 +10,10 @@
 class InstrumentBLE : public Instrument
 {
 public:
+    InstrumentBLE()
+    {
+        _instrumentName = "BLE MIDI";
+    }
     void init() override;
     void start() override;
     void stop() override;

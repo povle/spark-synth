@@ -82,6 +82,11 @@ public:
         amy_add_event(&e);
     }
 
+    const char *getName()
+    {
+        return _instrumentName;
+    }
+
     // Standardized Potentiometer Router
     virtual void updatePot(uint8_t channel, float value)
     {
@@ -165,6 +170,7 @@ public:
     }
 
 protected:
+    const char *_instrumentName = "Base";
     virtual uint8_t getSynthChannel() { return 1; }
     virtual void onCustomPot(uint8_t channel, float value) {}
 

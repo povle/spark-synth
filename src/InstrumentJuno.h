@@ -6,6 +6,10 @@
 class InstrumentJuno : public Instrument
 {
 public:
+    InstrumentJuno()
+    {
+        _instrumentName = "JUNO";
+    }
     void init() override;
     void start() override;
     void stop() override;

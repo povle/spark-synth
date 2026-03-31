@@ -11,7 +11,7 @@
 #include "InstrumentJuno.h"
 #include "InstrumentBLE.h"
 
-#define NUM_INSTRUMENTS 3
+#define NUM_INSTRUMENTS 4
 
 class SystemClass
 {
@@ -35,14 +35,8 @@ private:
     Instrument *instruments[NUM_INSTRUMENTS] = {
         new InstrumentDX7(),
         new InstrumentJuno(),
-        // new InstrumentPiano(),
+        new InstrumentPiano(),
         new InstrumentBLE()};
-
-    const char *instrumentNames[NUM_INSTRUMENTS] = {
-        "DX-7",
-        "Juno",
-        // "Piano",
-        "BLE MIDI"};
 };
 
 extern SystemClass System;

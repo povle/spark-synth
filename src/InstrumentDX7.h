@@ -6,6 +6,10 @@
 class InstrumentDX7 : public Instrument
 {
 public:
+    InstrumentDX7()
+    {
+        _instrumentName = "DX7";
+    }
     void init() override;
     void start() override;
     void stop() override;
