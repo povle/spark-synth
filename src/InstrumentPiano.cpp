@@ -12,7 +12,8 @@ void InstrumentPiano::start()
     // Allocate voices dynamically when the instrument loads
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 12;
+    e.num_voices = 5;
+    e.volume = 4.0f;
     e.patch_number = 256;
     amy_add_event(&e);
 
