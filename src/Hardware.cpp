@@ -86,6 +86,86 @@ void HardwareClass::audioPump()
     // amy_update(); // AMY handles I2S internally
 }
 
+int getCleanBatteryADC()
+{
+    int samples[9];
+
+    // 1. Rapidly collect 9 samples
+    for (int i = 0; i < 9; i++)
+    {
+        samples[i] = analogRead(BATTERY_PIN);
+        // Tiny 200us delay spreads the samples out just enough to miss a single audio spike
+        delayMicroseconds(200);
+    }
+
+    // 2. Sort the samples from lowest to highest (Simple Bubble Sort)
+    for (int i = 0; i < 8; i++)
+    {
+        for (int j = i + 1; j < 9; j++)
+        {
+            if (samples[i] > samples[j])
+            {
+                int temp = samples[i];
+                samples[i] = samples[j];
+                samples[j] = temp;
+            }
+        }
+    }
+
+    // 3. Trimmed Mean: Throw away the 2 highest and 2 lowest readings.
+    // Average only the 5 middle, highly-stable readings.
+    long sum = 0;
+    for (int i = 2; i <= 6; i++)
+    {
+        sum += samples[i];
+    }
+
+    return sum / 5;
+}
+
+// --- UPDATED: Faster, Smoother Update Loop ---
+void HardwareClass::updateBattery()
+{
+    // Read every 100ms
+    if (millis() - _lastBatteryRead < 100)
+        return;
+    _lastBatteryRead = millis();
+
+    // Get the outlier-free ADC reading
+    int clean_adc = getCleanBatteryADC();
+
+    // Convert to Voltage (Divider is 100k/100k, so multiply by 2)
+    float current_voltage = ((float)clean_adc / 4095.0f) * BATTERY_CALIBRATION_FACTOR * 2.0f;
+
+    // Apply a much FASTER smoothing filter
+    if (_smoothedBatteryVolts < 0.0f)
+    {
+        // First boot: snap instantly to reality
+        _smoothedBatteryVolts = current_voltage;
+    }
+    else
+    {
+        _smoothedBatteryVolts = (current_voltage * 0.1f) + (_smoothedBatteryVolts * 0.9f);
+    }
+}
+
+int HardwareClass::getBatteryPercentage()
+{
+    if (_smoothedBatteryVolts < 0.0f)
+        return 100;
+
+    // LiPo Math: 4.2V is 100%, 3.3V is 0%
+    float percentage = (_smoothedBatteryVolts - 3.0f) / (4.2f - 3.0f) * 100.0f;
+
+    int final_pct = (int)percentage;
+    if (final_pct > 100)
+        final_pct = 100;
+    if (final_pct < 0)
+        final_pct = 0;
+
+    return final_pct;
+}
+
 void HardwareClass::initNoteMap()
 {
     // Initialize all to Middle C (60) as a fallback

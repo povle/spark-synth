@@ -19,6 +19,9 @@ extern "C"
 #define I2S_DIN_PIN 5
 #define I2S_BCK_PIN 6
 
+#define BATTERY_PIN 7
+#define BATTERY_CALIBRATION_FACTOR 3.38f
+
 #define I2C_SDA_PIN 8
 #define I2C_SCL_PIN 9
 
@@ -81,6 +84,9 @@ public:
     bool isButtonPressed(uint8_t index);
     bool wasButtonJustPressed(uint8_t index);
 
+    void updateBattery();
+    int getBatteryPercentage();
+
 private:
     Adafruit_MCP23X17 mcp;
 
@@ -101,6 +107,9 @@ private:
     uint8_t queueTail = 0;
 
     void initNoteMap();
+
+    unsigned long _lastBatteryRead = 0;
+    float _smoothedBatteryVolts = -1.0f; // -1 indicates it hasn't been read yet
 };
 
 extern HardwareClass Hardware;
