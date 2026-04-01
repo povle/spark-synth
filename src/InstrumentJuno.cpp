@@ -20,7 +20,7 @@ void InstrumentJuno::start()
     e.synth = 1;
     e.num_voices = 8;
     e.volume = 4.0f;
-    e.patch_number = patch + 1; // AMY internal patches are 1-indexed
+    e.patch_number = patch;
     amy_add_event(&e);
 
     // 2. Load the state into our local struct
