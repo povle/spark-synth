@@ -119,16 +119,19 @@ void InstrumentJuno::updateOscAmps(int osc)
     e.synth = 1;
     e.osc = osc;
 
-    // Use a tiny minimum value (0.0001) instead of 0.0.
-    // This prevents AMY from putting the oscillator to sleep at Note On,
-    // allowing you to fade it in while the note is already playing!
-    float target_amp = 0.005f;
+    float target_amp = 0.005f; // Minimum baseline to keep osc awake
 
     switch (osc)
     {
     case JUNO_OSC_PWM:
-        // Pulse wave amplitude is fixed to VCA, its knob controls duty cycle instead
-        target_amp = state.pulse_en ? fmax(state.vca_level, 0.005f) : 0.005f;
+        if (state.dco_pwm <= 0.01f)
+        {
+            target_amp = 0.005f; // Knob is zero, mute it.
+        }
+        else
+        {
+            target_amp = fmax(state.vca_level, 0.005f); // Knob is up, follow VCA.
+        }
         break;
 
     case JUNO_OSC_SAW:
@@ -144,18 +147,14 @@ void InstrumentJuno::updateOscAmps(int osc)
         break;
     }
 
-    // THE "STUCK NOTE" FIX: You must populate the ENTIRE array!
-    // If you don't declare amp_coefs[3] here, it overwrites the envelope with 0.
-    e.amp_coefs[0] = 0.0f;       // Base
-    e.amp_coefs[1] = 0.0f;       // Note
-    e.amp_coefs[2] = target_amp; // Velocity (scales the volume)
+    e.amp_coefs[0] = 0.0f;
+    e.amp_coefs[1] = 0.0f;
+    e.amp_coefs[2] = target_amp;
 
-    // Maintain the envelope connection (EG0 = ADSR, EG1 = Gate)
     e.amp_coefs[3] = state.vca_gate ? 0.0f : 1.0f;
     e.amp_coefs[4] = state.vca_gate ? 1.0f : 0.0f;
-
-    e.amp_coefs[5] = 0.0f; // LFO
-    e.amp_coefs[6] = 0.0f; // Pitch Bend
+    e.amp_coefs[5] = 0.0f;
+    e.amp_coefs[6] = 0.0f;
 
     amy_add_event(&e);
 }
@@ -166,18 +165,31 @@ void InstrumentJuno::updateOscDuty(int osc)
     e.synth = 1;
     e.osc = osc;
 
-    // AMY uses duty_coefs to control the Pulse Width.
-    // If the Juno is in "Manual PWM" mode, the knob controls the width directly.
-    // If it's in "LFO" mode, the knob controls how much the LFO sweeps the width.
-    if (state.pwm_manual)
+    if (state.dco_pwm <= 0.01f)
     {
-        e.duty_coefs[0] = state.dco_pwm; // Base width
-        e.duty_coefs[5] = 0.0f;          // No LFO
+        // Knob is off. Set to neutral square wave to wait silently.
+        e.duty_coefs[0] = 0.5f;
+        e.duty_coefs[5] = 0.0f;
     }
     else
     {
-        e.duty_coefs[0] = 0.5f;          // Center square wave
-        e.duty_coefs[5] = state.dco_pwm; // LFO modulation depth
+        // Remap the active part of the knob (0.02 - 1.0) back to 0.0 - 1.0
+        float active_pwm = (state.dco_pwm - 0.02f) / 0.98f;
+        if (active_pwm < 0.0f)
+            active_pwm = 0.0f;
+
+        if (state.pwm_manual)
+        {
+            // Juno manual PWM sweeps from 50% (Square) down to ~5% (Narrow)
+            e.duty_coefs[0] = 0.5f - (0.45f * active_pwm);
+            e.duty_coefs[5] = 0.0f;
+        }
+        else
+        {
+            // LFO mode: base is 50%, knob controls depth
+            e.duty_coefs[0] = 0.5f;
+            e.duty_coefs[5] = 0.5f * active_pwm;
+        }
     }
 
     amy_add_event(&e);

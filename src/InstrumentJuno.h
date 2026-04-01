@@ -17,12 +17,10 @@ struct JunoState
     float vcf_freq, vcf_res, vcf_env, vcf_lfo, vcf_kbd, vca_level;
     float env_a, env_d, env_s, env_r, dco_sub;
 
-    // Original binary switches
-    bool stop_16, stop_8, stop_4, pulse_en;
+    bool stop_16, stop_8, stop_4;
     bool pwm_manual, vcf_neg, vca_gate, cheap_filter;
     uint8_t chorus, hpf;
 
-    // NEW: Continuous analog override for Sawtooth
     float saw_level;
 
     void loadFromSysex(int patchIndex)
@@ -37,7 +35,6 @@ struct JunoState
         lfo_rate = sysex[0] / 127.0f;
         lfo_delay_time = sysex[1] / 127.0f;
         dco_lfo = sysex[2] / 127.0f;
-        dco_pwm = sysex[3] / 127.0f;
         dco_noise = sysex[4] / 127.0f;
         vcf_freq = sysex[5] / 127.0f;
         vcf_res = sysex[6] / 127.0f;
@@ -55,11 +52,22 @@ struct JunoState
         stop_16 = (sysex[16] & (1 << 0)) > 0;
         stop_8 = (sysex[16] & (1 << 1)) > 0;
         stop_4 = (sysex[16] & (1 << 2)) > 0;
-        pulse_en = (sysex[16] & (1 << 3)) > 0;
 
         // Convert binary SAW to continuous float
         bool saw_binary = (sysex[16] & (1 << 4)) > 0;
         saw_level = saw_binary ? 1.0f : 0.0f;
+
+        bool orig_pulse_en = (sysex[16] & (1 << 3)) > 0;
+        if (!orig_pulse_en)
+        {
+            dco_pwm = 0.0f; // Force knob to 0.0 (OFF)
+        }
+        else
+        {
+            // Map original 0.0-1.0 into our new "Active" range (0.02 - 1.0)
+            float raw_pwm = sysex[3] / 127.0f;
+            dco_pwm = 0.02f + (raw_pwm * 0.98f);
+        }
 
         // Chorus mapping
         uint8_t cho_raw = (sysex[16] >> 5) & 0x03;
@@ -71,9 +79,8 @@ struct JunoState
         vcf_neg = (sysex[17] & (1 << 1)) > 0;
         vca_gate = (sysex[17] & (1 << 2)) > 0;
 
-        // HPF mapping
         uint8_t hpf_raw = (sysex[17] >> 3) & 0x03;
-        hpf = 3 - hpf_raw; // Invert to match standard Juno 0-3
+        hpf = 3 - hpf_raw;
 
         cheap_filter = (sysex[17] & (1 << 5)) > 0;
     }
