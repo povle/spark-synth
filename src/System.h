@@ -23,6 +23,7 @@ public:
     void handleSerialCommand();
     void updateScreen();
     void inputTask();
+    bool isBleActive() { return currentInstrument == 3; }
 
     uint8_t getCurrentInstrument() { return currentInstrument; }
 

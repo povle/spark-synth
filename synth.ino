@@ -1,34 +1,45 @@
 #include "src/System.h"
 
-void input_task_wrapper(void *pvParameters)
-{
-    while (1)
-    {
-        System.inputTask();
+TaskHandle_t inputTaskHandle = NULL; 
 
-        // Run at ~500Hz, yielding to other tasks like the main loop
+void input_task_wrapper(void* pvParameters) {
+    while(1) {
+        System.inputTask();
         vTaskDelay(pdMS_TO_TICKS(2));
     }
 }
 
-void setup()
-{
-    // Your existing setup() code is perfect. It initializes everything.
+void setup() {
     System.begin();
 
-    // After System.begin(), launch the high-priority input task on Core 0
     xTaskCreatePinnedToCore(
-        input_task_wrapper,
-        "InputTask", // Task name
-        4096,        // Stack size
-        NULL,        // Parameters
-        5,           // Priority (high)
-        NULL,        // Task handle
-        0            // Core
+        input_task_wrapper, "InputTask", 4096, NULL, 5, &inputTaskHandle, 0
     );
 }
 
-void loop()
-{
+void loop() {
+    if (System.isBleActive()) {
+        // --- SLOW POLLING MODE (for BLE Stability) ---
+        // For some reason BLE MIDI is laggy when the input is in a separate task. 
+
+        if (eTaskGetState(inputTaskHandle) != eSuspended) {
+            vTaskSuspend(inputTaskHandle);
+            Serial.println("SUSPENDED fast input task.");
+        }
+        
+        // Run the scanner manually in the main loop
+        System.inputTask(); // This polls keys/pots/joy once
+        
+        // This slow delay is fine because BLE can't handle fast updates anyway
+        vTaskDelay(pdMS_TO_TICKS(10)); 
+
+    } else {
+        // --- FAST POLLING MODE (for AMY Audio) ---
+        // Ensure the input task is running
+        if (eTaskGetState(inputTaskHandle) == eSuspended) {
+            vTaskResume(inputTaskHandle);
+            Serial.println("RESUMED fast input task.");
+        }
+    }
     System.update();
 }
