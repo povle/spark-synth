@@ -37,7 +37,8 @@ private:
         new InstrumentDX7(),
         new InstrumentJuno(),
         new InstrumentPiano(),
-        new InstrumentBLE()};
+        new InstrumentBLE() // !!update isBleActive after moving this!!
+    };
 };
 
 extern SystemClass System;

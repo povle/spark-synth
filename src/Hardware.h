@@ -37,7 +37,7 @@ extern "C"
 #define NUM_ROWS 6
 #define NUM_COLS 5
 
-#define DISABLE_SERIAL_OUTPUT 1
+#define DISABLE_SERIAL_OUTPUT 0
 
 #if DISABLE_SERIAL_OUTPUT
 class NullSerial
