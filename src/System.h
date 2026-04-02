@@ -27,6 +27,8 @@ public:
 
     uint8_t getCurrentInstrument() { return currentInstrument; }
 
+    volatile bool useBackgroundTask = true;
+
 private:
     uint8_t currentInstrument = 0;
     uint8_t activeNotes[NUM_ROWS][NUM_COLS] = {0};

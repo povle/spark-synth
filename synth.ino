@@ -4,8 +4,15 @@ TaskHandle_t inputTaskHandle = NULL;
 
 void input_task_wrapper(void* pvParameters) {
     while(1) {
-        System.inputTask();
-        vTaskDelay(pdMS_TO_TICKS(2));
+        if (System.useBackgroundTask) {
+            // SYNTH MODE: Scan as fast as possible on Core 0
+            System.inputTask();
+            vTaskDelay(pdMS_TO_TICKS(2));
+        } else {
+            // BLE MODE: Do absolutely nothing. Sleep cleanly. 
+            // Core 0 is now 100% free for the Bluetooth Radio.
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
     }
 }
 
@@ -18,26 +25,27 @@ void setup() {
 }
 
 void loop() {
+
     if (System.isBleActive()) {
-        // --- SLOW POLLING MODE (for BLE Stability) ---
-        // For some reason BLE MIDI is laggy when the input is in a separate task.
-
-        if (eTaskGetState(inputTaskHandle) != eSuspended) {
-            vTaskSuspend(inputTaskHandle);
-            Serial.println("SUSPENDED fast input task.");
+        // --- BLE MODE ---
+        if (System.useBackgroundTask) {
+            // 1. Tell the background task to stop
+            System.useBackgroundTask = false;
+            // 2. Wait 5ms to guarantee it has finished its current I2C read
+            delay(5); 
         }
-
-        System.update();
-        System.inputTask(); // This polls keys/pots/joy once
-
+        
+        // 3. Scan the keyboard here on Core 1 (Safe from the Radio)
+        System.inputTask();
+        
     } else {
-        // --- FAST POLLING MODE (for AMY Audio) ---
-        // Ensure the input task is running
-        if (eTaskGetState(inputTaskHandle) == eSuspended) {
-            vTaskResume(inputTaskHandle);
-            Serial.println("RESUMED fast input task.");
-        }
-        System.update();
+        // --- SYNTH MODE ---
+        // Let the high-speed background task handle it
+        System.useBackgroundTask = true;
     }
+    
+    // Pacing delay
+    vTaskDelay(pdMS_TO_TICKS(5));
 
+    System.update();
 }
