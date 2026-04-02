@@ -93,7 +93,7 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
 
     // --- PATCH NAME ---
     u8g2.setFont(u8g2_font_tenfatguys_tf);
-    drawWrappedPatchName(u8g2, 0, y_offset + 12, juno_patch_names[patch]);
+    drawWrappedPatchName(u8g2, 0, y_offset + 11, juno_patch_names[patch]);
 
     // --- COLUMN HEADER BOXES ---
     u8g2.setFont(u8g2_font_5x7_tr);

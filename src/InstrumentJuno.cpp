@@ -1,5 +1,6 @@
 #include "InstrumentJuno.h"
 #include "juno_patches.h"
+#include "Controls.h"
 
 InstrumentJuno::InstrumentJuno()
 {
@@ -22,6 +23,8 @@ void InstrumentJuno::start()
     e.volume = 4.0f;
     e.patch_number = patch;
     amy_add_event(&e);
+
+    Controls.lockAllPots();
 
     // 2. Load the state into our local struct
     state.loadFromSysex(patch);
@@ -302,8 +305,5 @@ void InstrumentJuno::onPressedButton(uint8_t button_id)
     } else {
         return;
     }
-
-    // Instead of just sending e.patch_number, we re-run start()
-    // so it properly loads the struct and wakes up the oscillators!
     start();
 }
