@@ -165,14 +165,17 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
 
     uint8_t sawBarX = dcoX + 1 + barSpacing;
     uint8_t sawBarHeight = (uint8_t)(state.saw_level * barMaxHeight);
-    u8g2.drawBox(sawBarX, graphBottom - 2 - sawBarHeight, barWidth, sawBarHeight);
+    u8g2.drawLine(sawBarX, graphBottom - 3, sawBarX + barWidth, graphBottom - 3 - sawBarHeight);
+    u8g2.drawVLine(sawBarX + barWidth, graphBottom - 2 - sawBarHeight, sawBarHeight);
 
     uint8_t subBarX = sawBarX + barWidth + barSpacing;
     uint8_t subBarHeight = (uint8_t)(state.dco_sub * barMaxHeight);
-    u8g2.drawBox(subBarX, graphBottom - 2 - subBarHeight, barWidth, subBarHeight);
+    u8g2.drawVLine(subBarX, graphBottom - 2 - subBarHeight, subBarHeight);
+    u8g2.drawHLine(subBarX, graphBottom - 3 - subBarHeight, barWidth+1);
+    u8g2.drawVLine(subBarX + barWidth, graphBottom - 2 - subBarHeight, subBarHeight);
 
     uint8_t noiseBarX = subBarX + barWidth + barSpacing;
-    uint8_t noiseBarHeight = (uint8_t)(state.dco_noise * barMaxHeight);
+    uint8_t noiseBarHeight = std::max((uint8_t)(state.dco_noise * (barMaxHeight+1)), (uint8_t)1);
     u8g2.drawBox(noiseBarX, graphBottom - 2 - noiseBarHeight, barWidth, noiseBarHeight);
 
     // --- COLUMN 2: HPF (17px) ---
@@ -236,7 +239,7 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
     uint8_t envGraphBottom = graphBottom - 4;
     uint8_t envGraphHeight = envGraphBottom - envGraphTop;
 
-    uint8_t maxSegmentWidth = envGraphWidth / 4;
+    uint8_t maxSegmentWidth = envGraphWidth / 3.25;
 
     uint8_t attackWidth = std::max((uint8_t)1, (uint8_t)(state.env_a * maxSegmentWidth));
     uint8_t decayWidth = std::max((uint8_t)1, (uint8_t)(state.env_d * maxSegmentWidth));

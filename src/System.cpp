@@ -92,9 +92,9 @@ void SystemClass::update()
     Controls.readJoystick(jX, jY);
     instruments[currentInstrument]->updateJoystick(jX, jY);
 
-    // 5. UPDATE OLED (Limit to 5 FPS so it doesn't choke the ESP32)
+    // 5. UPDATE OLED (Limit to 10 FPS so it doesn't choke the ESP32)
     static unsigned long lastScreenUpdate = 0;
-    if (millis() - lastScreenUpdate > 200)
+    if (millis() - lastScreenUpdate > 100)
     {
         lastScreenUpdate = millis();
         updateScreen();
