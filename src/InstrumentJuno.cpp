@@ -307,14 +307,3 @@ void InstrumentJuno::onPressedButton(uint8_t button_id)
     // so it properly loads the struct and wakes up the oscillators!
     start();
 }
-
-void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
-{
-    u8g2.setFont(u8g2_font_tenfatguys_tf);
-    drawWrappedPatchName(u8g2, 0, y_offset + 18, juno_patch_names[patch]);
-
-    // Mini status for knobs
-    u8g2.setFont(u8g2_font_5x7_tr);
-    u8g2.setCursor(0, 60);
-    u8g2.printf("VCF:%d RES:%d HPF:%d", (int)(state.vcf_freq * 99), (int)(state.vcf_res * 99), state.hpf);
-}
