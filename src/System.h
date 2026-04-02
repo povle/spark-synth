@@ -10,8 +10,9 @@
 #include "InstrumentDX7.h"
 #include "InstrumentJuno.h"
 #include "InstrumentBLE.h"
+#include "InstrumentSampler.h"
 
-#define NUM_INSTRUMENTS 4
+#define NUM_INSTRUMENTS 5
 
 class SystemClass
 {
@@ -23,7 +24,7 @@ public:
     void handleSerialCommand();
     void updateScreen();
     void inputTask();
-    bool isBleActive() { return currentInstrument == 3; }
+    bool isBleActive() { return currentInstrument == 4; }
 
     uint8_t getCurrentInstrument() { return currentInstrument; }
 
@@ -38,6 +39,7 @@ private:
     Instrument *instruments[NUM_INSTRUMENTS] = {
         new InstrumentDX7(),
         new InstrumentJuno(),
+        new InstrumentSampler(),
         new InstrumentPiano(),
         new InstrumentBLE() // !!update isBleActive after moving this!!
     };
