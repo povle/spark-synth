@@ -113,6 +113,33 @@ void InstrumentJuno::updatePot(uint8_t channel, float value)
         state.env_r = value;
         updateAdsr();
         break;
+    // FX (12-13) - Sent directly to global FX engine
+    case 12:
+        if (value < 0.05)
+        {
+            value = 0;
+        };
+        params.reverb = value;
+
+        config_reverb(value * 2.0f, 0.85f, 0.5f, 3000.0f);
+        break;
+    case 13:
+        if (value < 0.05)
+        {
+            value = 0;
+        };
+
+        params.delay_freq = value * 2000.0f;
+        config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
+        break;
+    case 14:
+        if (value < 0.05)
+        {
+            value = 0;
+        };
+        params.delay_amp = value;
+        config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
+        break;
     }
 }
 
