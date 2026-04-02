@@ -2,6 +2,7 @@
 #include "InstrumentJuno.h"
 #include "juno_patches.h"
 #include <algorithm>
+#include <Arduino.h>
 
 // Helper: Draw slider structure (vertical line + 4 horizontal lines)
 void drawSlider(U8G2 &u8g2, uint8_t centerX, uint8_t sliderTop, uint8_t sliderBottom, uint8_t lineY[4])
@@ -239,12 +240,12 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
     uint8_t envGraphBottom = graphBottom - 4;
     uint8_t envGraphHeight = envGraphBottom - envGraphTop;
 
-    uint8_t maxSegmentWidth = envGraphWidth / 3.25;
+    uint8_t maxSegmentWidth = envGraphWidth / 3.1;
 
-    uint8_t attackWidth = std::max((uint8_t)1, (uint8_t)(state.env_a * maxSegmentWidth));
-    uint8_t decayWidth = std::max((uint8_t)1, (uint8_t)(state.env_d * maxSegmentWidth));
+    uint8_t attackWidth =  std::max((uint8_t)1, (uint8_t)(state.env_a * maxSegmentWidth));
+    uint8_t decayWidth =   std::max((uint8_t)1, (uint8_t)(state.env_d * maxSegmentWidth));
     uint8_t releaseWidth = std::max((uint8_t)1, (uint8_t)(state.env_r * maxSegmentWidth));
-    uint8_t sustainWidth = std::max((uint8_t)1, (uint8_t)(envGraphWidth - attackWidth - decayWidth - releaseWidth));
+    uint8_t sustainWidth = std::max((uint8_t)1, (uint8_t)(envGraphWidth - (attackWidth + decayWidth + releaseWidth)));
 
     uint8_t attackX = envGraphLeft;
     uint8_t attackY = envGraphBottom;
@@ -254,11 +255,8 @@ void InstrumentJuno::drawUI(U8G2 &u8g2, uint8_t y_offset)
     uint8_t sustainY = envGraphTop + (uint8_t)((1.0f - state.env_s) * envGraphHeight);
     uint8_t releaseStartX = sustainX + sustainWidth;
     uint8_t releaseStartY = sustainY;
-    uint8_t endX = std::min(envGraphRight, (uint8_t)(releaseStartX + releaseWidth));
+    uint8_t endX = envGraphRight;
     uint8_t endY = envGraphBottom;
-
-    if (endX >= envGraphRight)
-        releaseStartX = endX - 1;
 
     u8g2.drawLine(attackX, attackY, decayX, decayY);
     u8g2.drawLine(decayX, decayY, sustainX, sustainY);
