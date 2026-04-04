@@ -61,19 +61,6 @@ void SystemClass::update()
     }
 
 
-    // 3. Process Potentiometers
-    for (uint8_t i = 0; i < 16; i++)
-    {
-        float value;
-        if (Controls.readPot(i, value))
-        {
-            instruments[currentInstrument]->updatePot(i, value);
-        }
-    }
-
-    // === INSTRUMENT MENU HANDLING (FINAL FIX) ===
-
-
     static bool menuButtonWasPressed = false; // Track button state within menu
     static bool menuReadyForSelect = false;   // True after release
 
@@ -112,46 +99,6 @@ void SystemClass::update()
     {
         // === MENU MODE ===
 
-        // Joystick navigation
-        float jX, jY;
-        Controls.readJoystick(jX, jY);
-
-        const float DEADZONE_X = 0.2f;
-        const float DEADZONE_Y = 0.15f;
-        static unsigned long lastNavTime = 0;
-
-        if (millis() - lastNavTime >= 200)
-        {
-            bool moved = false;
-
-            // Y-axis: 0.0 to 1.0, center 0.5
-            if (jY > (0.5f + DEADZONE_Y) && menuCursorRow > 0)
-            {
-                menuCursorRow = 0;
-                moved = true;
-            }
-            else if (jY < (0.5f - DEADZONE_Y) && menuCursorRow < 1)
-            {
-                menuCursorRow = 1;
-                moved = true;
-            }
-
-            // X-axis: -1.0 to 1.0, center 0.0
-            if (jX < -DEADZONE_X && menuCursorCol > 0)
-            {
-                menuCursorCol--;
-                moved = true;
-            }
-            else if (jX > DEADZONE_X && menuCursorCol < 2)
-            {
-                menuCursorCol++;
-                moved = true;
-            }
-
-            if (moved)
-                lastNavTime = millis();
-        }
-
         // === SELECT: Track button state locally (NOT wasButtonJustPressed!) ===
         bool buttonIsPressed = Hardware.isButtonPressed(4);
 
@@ -173,13 +120,6 @@ void SystemClass::update()
         // Update state for next loop
         menuButtonWasPressed = buttonIsPressed;
     }
-    else
-    {
-        // === NORMAL MODE ===
-        float jX, jY;
-        Controls.readJoystick(jX, jY);
-        instruments[currentInstrument]->updateJoystick(jX, jY);
-    }
 
     // 5. UPDATE OLED (Limit to 10 FPS so it doesn't choke the ESP32)
     static unsigned long lastScreenUpdate = 0;
@@ -192,6 +132,67 @@ void SystemClass::update()
     Hardware.updateBattery();
 
     instruments[currentInstrument]->update();
+}
+
+void SystemClass::potTask()
+{
+    // Process Potentiometers and joystick
+    for (uint8_t i = 0; i < 16; i++)
+    {
+        float value;
+        if (Controls.readPot(i, value))
+        {
+            instruments[currentInstrument]->updatePot(i, value);
+        }
+    }
+
+    float jX, jY;
+    Controls.readJoystick(jX, jY);
+
+    Serial.printf("jX=%f jY=%f\n", jX, jY);
+
+    if (instrumentMenuActive)
+        updateInstrumentMenuJoystick(jX, jY);
+    else
+        instruments[currentInstrument]->updateJoystick(jX, jY);
+}
+
+void SystemClass::updateInstrumentMenuJoystick(float jX, float jY)
+{
+    const float DEADZONE_X = 0.2f;
+    const float DEADZONE_Y = 0.15f;
+
+    if (millis() - lastNavTime >= 200)
+    {
+        bool moved = false;
+
+        // Y-axis: 0.0 to 1.0, center 0.5
+        if (jY > (0.5f + DEADZONE_Y) && menuCursorRow > 0)
+        {
+            menuCursorRow = 0;
+            moved = true;
+        }
+        else if (jY < (0.5f - DEADZONE_Y) && menuCursorRow < 1)
+        {
+            menuCursorRow = 1;
+            moved = true;
+        }
+
+        // X-axis: -1.0 to 1.0, center 0.0
+        if (jX < -DEADZONE_X && menuCursorCol > 0)
+        {
+            menuCursorCol--;
+            moved = true;
+        }
+        else if (jX > DEADZONE_X && menuCursorCol < 2)
+        {
+            menuCursorCol++;
+            moved = true;
+        }
+
+        if (moved)
+            lastNavTime = millis();
+    }
 }
 
 void SystemClass::inputTask()

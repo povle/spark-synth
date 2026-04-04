@@ -24,6 +24,8 @@ public:
     void handleSerialCommand();
     void updateScreen();
     void inputTask();
+    void potTask();
+    void updateInstrumentMenuJoystick(float jX, float jY);
     bool isBleActive() { return currentInstrument == 4; }
 
     uint8_t getCurrentInstrument() { return currentInstrument; }
@@ -49,6 +51,7 @@ private:
     uint8_t menuCursorCol = 0; // 0, 1, or 2
     unsigned long menuLongPressStart = 0;
     static constexpr unsigned long MENU_LONG_PRESS_MS = 800; // 0.8s to open menu
+    unsigned long lastNavTime = 0;
 
     // Helper to get instrument index from grid position
     uint8_t gridPosToIndex(uint8_t row, uint8_t col)
