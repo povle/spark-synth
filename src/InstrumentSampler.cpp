@@ -98,14 +98,12 @@ void InstrumentSampler::noteOn(uint8_t note, float velocity)
     if (!isActive || isRecording || sample_length == 0)
         return;
 
-    Serial.printf("  [Sampler] NOTE ON: %d %f\n", note, velocity);
-
+    // Send note event with gain applied to velocity
     amy_event e = amy_default_event();
     e.synth = getSynthChannel();
     e.midi_note = note;
-    e.velocity = velocity;
-
-    // NO e.preset, NO e.patch_number, NO e.wave!
+    e.velocity = velocity * _sample_gain; // Apply amplification
+    // NO preset/patch/wave here - set in setupSynthVoices only
     amy_add_event(&e);
 }
 
@@ -121,36 +119,46 @@ void InstrumentSampler::noteOff(uint8_t note)
     amy_add_event(&e);
 }
 
-void InstrumentSampler::updatePot(uint8_t channel, float value)
+void InstrumentSampler::onCustomPot(uint8_t channel, float value)
 {
+    // Knob 0: Amplification (0.0x to 5.0x)
+    if (channel == 0)
+    {
+        _sample_gain = 0.0f + (value * 5.0f);
+
+        amy_event e = amy_default_event();
+        e.synth = getSynthChannel();
+        e.amp_coefs[0] = _sample_gain;
+        amy_add_event(&e);
+
+        Serial.printf("  [Sampler] Gain: %.2fx\n", _sample_gain);
+    }
+
+    // Knob 1: Trim start - set flag for debounced reload
+    if (channel == 1)
+    {
+        _trim_start = (uint32_t)(value * 0.9f * (float)original_length);
+        _trim_knob_last_change = millis();
+        _trim_pending_reload = true; // ← Set flag, don't reload yet
+        Serial.printf("  [Sampler] Trim start: %.2fs (pending)\n",
+                      (float)_trim_start / SAMPLE_RATE);
+    }
+
+    // Knob 2: Trim end - set flag for debounced reload
+    if (channel == 2)
+    {
+        _trim_end = (uint32_t)((0.1f + value * 0.9f) * (float)original_length);
+        _trim_knob_last_change = millis();
+        _trim_pending_reload = true; // ← Set flag, don't reload yet
+        Serial.printf("  [Sampler] Trim end: %.2fs (pending)\n",
+                      (float)_trim_end / SAMPLE_RATE);
+    }
+
+    // Existing pots 4-11 (filter/ADSR)
     if (channel < 4)
     {
         params.custom[channel] = value;
-        return;
     }
-
-    switch (channel)
-    {
-    case 4:
-        params.cutoff = 50.0f + (value * 8000.0f);
-        break;
-    case 5:
-        params.resonance = 0.5f + (value * 4.5f);
-        break;
-    case 8:
-        params.attack = value * 2.0f;
-        break;
-    case 9:
-        params.decay = value * 2.0f;
-        break;
-    case 10:
-        params.sustain = value;
-        break;
-    case 11:
-        params.release = value * 5.0f;
-        break;
-    }
-    sendAllParams();
 }
 
 void InstrumentSampler::onPressedButton(uint8_t button_id)
@@ -181,43 +189,131 @@ void InstrumentSampler::update()
         recordingFinished = false;
         finishRecording(); // Main thread has full stack
     }
+
+    checkTrimReload();
 }
 
 void InstrumentSampler::drawUI(U8G2 &u8g2, uint8_t y_offset)
 {
-    u8g2.setFont(u8g2_font_logisoso16_tr);
-    u8g2.setCursor(0, y_offset + 20);
-
     if (isRecording)
     {
+        u8g2.setFont(u8g2_font_callite24_tr);
+        u8g2.setCursor(0, y_offset + 17);
         u8g2.print("REC");
         int progress = (sample_index * 128) / MAX_SAMPLE_SAMPLES;
         if (progress > 128)
             progress = 128;
-        u8g2.drawFrame(0, y_offset + 30, 128, 10);
-        u8g2.drawBox(2, y_offset + 32, progress, 6);
+        u8g2.drawFrame(0, y_offset + 20, 128, 10);
+        u8g2.drawBox(2, y_offset + 22, progress, 6);
         u8g2.setFont(u8g2_font_7x13_tr);
         u8g2.setCursor(0, y_offset + 45);
         u8g2.printf("%.1fs", (float)sample_index / SAMPLE_RATE);
     }
+    else if (original_length == 0)
+    {
+        const int CIRCLES_FIRST_X = 32;
+        const int CIRCLES_LAST_X = 128 - 32;
+        const int CIRCLES_SPACING_X = (CIRCLES_LAST_X - CIRCLES_FIRST_X) / 3;
+        const int CIRCLES_Y = y_offset + 16;
+
+        int circle_x = CIRCLES_FIRST_X;
+        for (int i = 0; i < 4; i++) {
+            circle_x = CIRCLES_FIRST_X + CIRCLES_SPACING_X * i;
+            if (i == 2) {
+                u8g2.drawDisc(circle_x, CIRCLES_Y, 4);
+                u8g2.setFont(u8g2_font_streamline_hand_signs_t);
+                u8g2.setCursor(circle_x-5, CIRCLES_Y + 25);
+                u8g2.print("0");
+            }
+            else {
+                u8g2.drawCircle(circle_x, CIRCLES_Y, 4);
+            }
+        }
+
+    }
     else
     {
-        u8g2.print("SAMPLER");
-        u8g2.setFont(u8g2_font_7x13_tr);
-        u8g2.setCursor(0, y_offset + 35);
-        if (sample_length == 0)
+        // Waveform area: 128px wide, 40px tall, centered
+        const int WAVE_X = 0;
+        const int WAVE_Y = y_offset + 2;
+        const int WAVE_W = 128;
+        const int WAVE_H = 40;
+        const int WAVE_CENTER = WAVE_Y + WAVE_H / 2;
+
+        // Draw zero baseline
+        u8g2.drawHLine(WAVE_X, WAVE_CENTER, WAVE_W);
+
+        // Draw symmetric waveform using max absolute value per pixel
+        if (original_length > 0 && _record_buffer != nullptr)
         {
-            u8g2.print("Empty. BTN2.");
-        }
-        else
-        {
-            u8g2.printf("%.2fs", (float)sample_length / SAMPLE_RATE);
+
+            // Calculate visible region (trimmed portion)
+            uint32_t vis_start = _trim_start;
+            uint32_t vis_end = _trim_end;
+            if (vis_end <= vis_start)
+                vis_end = vis_start + 441; // Min 10ms
+            if (vis_end > original_length)
+                vis_end = original_length;
+            uint32_t vis_len = vis_end - vis_start;
+
+            for (int x = 0; x < WAVE_W; x++)
+            {
+                // Map pixel column to sample range in VISIBLE (trimmed) region
+                uint32_t s_start = vis_start + (x * vis_len) / WAVE_W;
+                uint32_t s_end = vis_start + ((x + 1) * vis_len) / WAVE_W;
+
+                if (s_end > vis_end)
+                    s_end = vis_end;
+                if (s_end <= s_start)
+                    s_end = s_start + 1;
+                if (s_start >= original_length)
+                    s_start = original_length - 1;
+                if (s_end > original_length)
+                    s_end = original_length;
+
+                // Find MAX ABSOLUTE value in this window, apply gain
+                int16_t max_abs = 0;
+                for (uint32_t s = s_start; s < s_end; s++)
+                {
+                    if (s >= original_length)
+                        break;
+                    int32_t val = (int32_t)_record_buffer[s] * (int32_t)(_sample_gain * 256);
+                    val = val >> 8; // Fixed-point gain apply
+                    int16_t scaled = (int16_t)val;
+                    int16_t abs_val = (scaled < 0) ? -scaled : scaled;
+                    if (abs_val > max_abs)
+                        max_abs = abs_val;
+                }
+
+                // Convert max_abs to pixel height (symmetric around center)
+                const float SCALE = (WAVE_H / 2.0f - 1) / 32768.0f;
+                int half_height = (int)(max_abs * SCALE);
+                if (half_height < 1 && max_abs > 0)
+                    half_height = 1;
+
+                // Draw symmetric vertical bar
+                int y_top = WAVE_CENTER - half_height;
+                int y_bottom = WAVE_CENTER + half_height;
+
+                if (y_top < WAVE_Y)
+                    y_top = WAVE_Y;
+                if (y_bottom > WAVE_Y + WAVE_H - 1)
+                    y_bottom = WAVE_Y + WAVE_H - 1;
+
+                if (y_bottom >= y_top)
+                {
+                    u8g2.drawVLine(WAVE_X + x, y_top, y_bottom - y_top + 1);
+                }
+            }
+
+            u8g2.setFont(u8g2_font_5x7_tr);
+            u8g2.setCursor(2, WAVE_Y + WAVE_H + 2);
+            u8g2.printf("%.1fs", (float)vis_start / SAMPLE_RATE);
+            u8g2.setCursor(90, WAVE_Y + WAVE_H + 2);
+            u8g2.printf("%.1fs", (float)vis_end / SAMPLE_RATE);
         }
     }
 }
-
-// === RECORDING TASK - Minimal Work ===
-
 void InstrumentSampler::recordingTaskWrapper(void *arg)
 {
     InstrumentSampler *self = (InstrumentSampler *)arg;
@@ -303,80 +399,48 @@ void InstrumentSampler::finishRecording()
 
     if (sample_length > 0)
     {
-        // === TRIM BUTTON CLICK NOISE ===
-        // Remove first and last 0.15 seconds
-        const uint32_t TRIM_SAMPLES = SAMPLE_RATE / 7; // 0.15 seconds
-        uint32_t trim_start = TRIM_SAMPLES;
-        uint32_t trim_end = (sample_length > TRIM_SAMPLES) ? sample_length - TRIM_SAMPLES : sample_length;
-        uint32_t trimmed_length = (trim_end > trim_start) ? trim_end - trim_start : 0;
+        // Store original length before trimming
+        original_length = sample_length;
 
-        Serial.printf("  [Sampler] Trimming: %d start + %d end = %d samples removed\n",
-                      TRIM_SAMPLES, TRIM_SAMPLES, sample_length - trimmed_length);
-        Serial.printf("  [Sampler] Original: %lu samples, Trimmed: %lu samples (%.2fs)\n",
-                      sample_length, trimmed_length, (float)trimmed_length / SAMPLE_RATE);
+        // Set initial trim to full sample (minus button click)
+        const uint32_t CLICK_TRIM = SAMPLE_RATE / 10; // 0.1s
+        _trim_start = (original_length > CLICK_TRIM * 2) ? CLICK_TRIM : 0;
+        _trim_end = (original_length > CLICK_TRIM) ? original_length - CLICK_TRIM : original_length;
 
-        if (trimmed_length < 100)
-        {
-            Serial.println("  [Sampler] WARNING: Too short after trim, skipping load");
-            return;
-        }
+        Serial.printf("  [Sampler] Trimming clicks: %lu -> %lu samples\n",
+                      original_length, _trim_end - _trim_start);
 
-        // Verify sample range (on trimmed portion)
-        int16_t min_val = 32767, max_val = -32768;
-        for (uint32_t i = trim_start; i < trim_end && i < trim_start + 100; i++)
-        {
-            if (_record_buffer[i] < min_val)
-                min_val = _record_buffer[i];
-            if (_record_buffer[i] > max_val)
-                max_val = _record_buffer[i];
-        }
-        Serial.printf("  [Sampler] Trimmed sample range: %d to %d\n", min_val, max_val);
-
-        Serial.printf("  [Sampler] Loading into AMY as PRESET %d...\n", _amy_preset_num);
-
-        // Load sample into AMY - use TRIMMED length!
+        // Load initial trimmed sample
         int16_t *amy_buf = pcm_load(
             _amy_preset_num,
-            trimmed_length, // ← Use trimmed length
+            _trim_end - _trim_start, // Initial trimmed length
             SAMPLE_RATE,
-            1,   // mono
-            60,  // base MIDI note
-            0, 0 // no loop
-        );
+            1,
+            60,
+            0, 0);
 
         if (amy_buf != nullptr)
         {
-            Serial.println("  [Sampler] pcm_load returned valid pointer");
+            Serial.println("  [Sampler] pcm_load OK");
+            memcpy(amy_buf, _record_buffer + _trim_start, (_trim_end - _trim_start) * sizeof(int16_t));
 
-            // Copy TRIMMED samples to AMY's buffer (skip first/last 0.1s)
-            memcpy(amy_buf, _record_buffer + trim_start, trimmed_length * sizeof(int16_t));
+            sample_length = _trim_end - _trim_start; // Update for UI
 
-            // Verify copy
-            Serial.printf("  [DBG] Buffer[%lu]=%d, AMY[0]=%d\n", trim_start, _record_buffer[trim_start], amy_buf[0]);
+            Serial.printf("  [DBG] Loaded %lu samples (preset %d)\n", sample_length, _amy_preset_num);
 
-            // Verify preset is registered
             const int16_t *check = pcm_get_sample_ram_for_preset(_amy_preset_num, nullptr);
-            Serial.printf("  [DBG] pcm_get_sample_ram_for_preset(%d) = %p\n",
-                          _amy_preset_num, (void *)check);
-
             if (check == nullptr)
             {
                 Serial.println("  [Sampler] ERROR: Preset not registered!");
                 return;
             }
 
-            // Update sample_length for display/UI (use trimmed value)
-            sample_length = trimmed_length;
-
-            // Configure synth for PCM playback
             setupSynthVoices();
-
-            Serial.printf("  [Sampler] ✓ PRESET %d loaded! Play keys.\n", _amy_preset_num);
+            Serial.printf("  [Sampler] ✓ Ready! Adjust gain/loop with knobs 0-2\n");
         }
         else
         {
             Serial.println("  [Sampler] ERROR: pcm_load returned NULL!");
-            Serial.println("  [Sampler] Try reducing MAX_SAMPLE_SAMPLES");
         }
     }
     else
@@ -384,7 +448,6 @@ void InstrumentSampler::finishRecording()
         Serial.println("  [Sampler] Cancelled (0 samples)");
     }
 }
-
 void InstrumentSampler::setupSynthVoices()
 {
     amy_event e = amy_default_event();
@@ -430,4 +493,78 @@ void InstrumentSampler::sendAllParams()
     e.eg0_times[2] = (uint16_t)(params.release * 1000);
     e.eg0_values[2] = 0.0f;
     amy_add_event(&e);
+}
+
+// Re-load sample with new trim/loop points - simple and reliable
+void InstrumentSampler::reloadTrimmedSample()
+{
+    if (sample_length == 0 || _record_buffer == nullptr)
+        return;
+
+    // Ensure valid trim range
+    if (_trim_end <= _trim_start)
+    {
+        _trim_end = _trim_start + 441; // Minimum 10ms
+    }
+    if (_trim_end > original_length)
+    {
+        _trim_end = original_length;
+    }
+
+    uint32_t trimmed_len = _trim_end - _trim_start;
+    if (trimmed_len < 100)
+        return; // Too short
+
+    Serial.printf("  [Sampler] Re-loading: %lu-%lu (%lu samples)\n",
+                  _trim_start, _trim_end, trimmed_len);
+
+    // Re-load preset with trimmed length and loop points
+    int16_t *amy_buf = pcm_load(
+        _amy_preset_num,
+        trimmed_len, // ← Trimmed length
+        SAMPLE_RATE,
+        1,              // mono
+        60,             // base MIDI note
+        0,              // loop start = 0 (relative to trimmed sample)
+        trimmed_len - 1 // loop end = full trimmed sample
+    );
+
+    if (amy_buf != nullptr)
+    {
+        // Copy ONLY the trimmed portion
+        memcpy(amy_buf, _record_buffer + _trim_start, trimmed_len * sizeof(int16_t));
+
+        // Update displayed length
+        sample_length = trimmed_len;
+
+        // Re-configure synth (no RESET_AMY - preserves preset)
+        amy_event e = amy_default_event();
+        e.synth = getSynthChannel();
+        e.patch_number = 1024; // Custom patch base
+        e.num_voices = 8;
+        amy_add_event(&e);
+
+        for (int i = 0; i < 20; i++)
+            amy_update();
+
+        Serial.printf("  [Sampler] ✓ Re-loaded %.2fs sample\n",
+                      (float)trimmed_len / SAMPLE_RATE);
+    }
+    else
+    {
+        Serial.println("  [Sampler] ERROR: pcm_load failed on re-load!");
+    }
+}
+
+void InstrumentSampler::checkTrimReload()
+{
+    if (!_trim_pending_reload)
+        return;
+
+    // Only reload if debounce timer has expired
+    if (millis() - _trim_knob_last_change >= TRIM_DEBOUNCE_MS)
+    {
+        _trim_pending_reload = false;
+        reloadTrimmedSample();
+    }
 }
