@@ -274,13 +274,19 @@ void HardwareClass::scanKeyboard()
     // We can just reuse that exact same snapshot to read them, saving I2C time!
     for (uint8_t b = 0; b < 5; b++)
     {
-        // Extract the specific button bit from the snapshot
         bool isPressed = ((allPins & (1 << buttonPins[b])) == 0);
 
+        // Detect press edge (existing)
         if (isPressed && !buttonState[b])
         {
-            buttonJustPressed[b] = true; // Mark as just fired
+            buttonJustPressed[b] = true;
         }
+
+        if (!isPressed && buttonState[b])
+        {
+            buttonJustReleased[b] = true;
+        }
+
         buttonState[b] = isPressed;
     }
 }
@@ -312,7 +318,19 @@ bool HardwareClass::wasButtonJustPressed(uint8_t index)
         return false;
     if (buttonJustPressed[index])
     {
-        buttonJustPressed[index] = false; // Clear flag after reading
+        buttonJustPressed[index] = false;
+        return true;
+    }
+    return false;
+}
+
+bool HardwareClass::wasButtonJustReleased(uint8_t index)
+{
+    if (index >= 5)
+        return false;
+    if (buttonJustReleased[index])
+    {
+        buttonJustReleased[index] = false;
         return true;
     }
     return false;

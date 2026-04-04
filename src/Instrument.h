@@ -71,6 +71,8 @@ public:
 
     virtual void onPressedButton(uint8_t button_id) {}
 
+    virtual void onReleasedButton(uint8_t button_id) {}
+
     virtual void updateJoystick(float x, float y) {
         if (!isActive)
             return;

@@ -32,6 +32,7 @@ public:
     void noteOff(uint8_t note) override;
     void onCustomPot(uint8_t channel, float value) override;
     void onPressedButton(uint8_t button_id) override;
+    void onReleasedButton(uint8_t button_id) override;
     void update() override;
     void drawUI(U8G2 &u8g2, uint8_t y_offset) override;
     uint8_t getSynthChannel() override { return 3; }

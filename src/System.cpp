@@ -48,15 +48,18 @@ void SystemClass::update()
         Serial.printf("Octave: %d\n", octaveShift);
     }
 
-    if (Hardware.wasButtonJustPressed(2))
+    for (uint8_t i = 2; i <=3; i++)
     {
-        instruments[currentInstrument]->onPressedButton(2);
+        if (Hardware.wasButtonJustPressed(i))
+        {
+            instruments[currentInstrument]->onPressedButton(i);
+        }
+        else if (Hardware.wasButtonJustReleased(i))
+        {
+            instruments[currentInstrument]->onReleasedButton(i);
+        }
     }
 
-    if (Hardware.wasButtonJustPressed(3))
-    {
-        instruments[currentInstrument]->onPressedButton(3);
-    }
 
     // Button 4 (Assuming this is the Joystick Switch) -> Long press to change instrument
     static unsigned long joyPressTime = 0;

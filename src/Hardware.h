@@ -83,6 +83,7 @@ public:
     // Button API
     bool isButtonPressed(uint8_t index);
     bool wasButtonJustPressed(uint8_t index);
+    bool wasButtonJustReleased(uint8_t index);
 
     void updateBattery();
     int getBatteryPercentage();
@@ -99,6 +100,7 @@ private:
     uint8_t buttonPins[5] = {6, 10, 9, 7, 8};
     bool buttonState[5] = {false};
     bool buttonJustPressed[5] = {false};
+    bool buttonJustReleased[5] = {false};
 
     bool keyState[NUM_ROWS][NUM_COLS] = {false};
 

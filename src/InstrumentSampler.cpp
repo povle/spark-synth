@@ -166,18 +166,21 @@ void InstrumentSampler::onPressedButton(uint8_t button_id)
     if (!isActive)
         return;
 
-    if (button_id == 2)
+    if (button_id == 2 && !isRecording)
     {
-        if (isRecording)
-        {
-            Serial.println("  [Sampler] Stopping...");
-            isRecording = false;
-            // finishRecording() called from update()
-        }
-        else
-        {
-            startRecording();
-        }
+        startRecording();
+    }
+}
+
+void InstrumentSampler::onReleasedButton(uint8_t button_id)
+{
+    if (!isActive)
+        return;
+
+    if (button_id == 2 && isRecording)
+    {
+        Serial.println("  [Sampler] Stopping...");
+        isRecording = false;
     }
 }
 
