@@ -61,25 +61,6 @@ void SystemClass::update()
     }
 
 
-    // Button 4 (Assuming this is the Joystick Switch) -> Long press to change instrument
-    static unsigned long joyPressTime = 0;
-    if (Hardware.wasButtonJustPressed(4))
-    {
-        joyPressTime = millis();
-    }
-    // If it's currently held down for more than 1 second
-    if (Hardware.isButtonPressed(4) && joyPressTime > 0 && (millis() - joyPressTime > 1000))
-    {
-        joyPressTime = 0; // Reset so it doesn't fire repeatedly
-        uint8_t nextInst = (currentInstrument + 1) % NUM_INSTRUMENTS;
-        switchInstrument(nextInst);
-    }
-    // Clear the timer if released early
-    if (!Hardware.isButtonPressed(4))
-    {
-        joyPressTime = 0;
-    }
-
     // 3. Process Potentiometers
     for (uint8_t i = 0; i < 16; i++)
     {
@@ -90,10 +71,115 @@ void SystemClass::update()
         }
     }
 
-    // 4. PROCESS JOYSTICK
-    float jX, jY;
-    Controls.readJoystick(jX, jY);
-    instruments[currentInstrument]->updateJoystick(jX, jY);
+    // === INSTRUMENT MENU HANDLING (FINAL FIX) ===
+
+
+    static bool menuButtonWasPressed = false; // Track button state within menu
+    static bool menuReadyForSelect = false;   // True after release
+
+    // Check for long press to OPEN menu
+    if (!instrumentMenuActive && Hardware.isButtonPressed(4))
+    {
+        if (menuLongPressStart == 0)
+        {
+            menuLongPressStart = millis();
+        }
+        else if (millis() - menuLongPressStart >= MENU_LONG_PRESS_MS)
+        {
+            // Menu opening
+            instrumentMenuActive = true;
+            menuLongPressStart = 0;
+            menuReadyForSelect = false;
+            menuButtonWasPressed = true; // Button is currently held
+            indexToGridPos(currentInstrument, menuCursorRow, menuCursorCol);
+            Serial.println("  [Menu] OPEN");
+        }
+    }
+    else if (!Hardware.isButtonPressed(4))
+    {
+        menuLongPressStart = 0;
+
+        // Track release after menu open
+        if (instrumentMenuActive && !menuReadyForSelect)
+        {
+            menuReadyForSelect = true;
+            menuButtonWasPressed = false; // Button now released
+            Serial.println("  [Menu] Released - ready for select");
+        }
+    }
+
+    if (instrumentMenuActive)
+    {
+        // === MENU MODE ===
+
+        // Joystick navigation
+        float jX, jY;
+        Controls.readJoystick(jX, jY);
+
+        const float DEADZONE_X = 0.2f;
+        const float DEADZONE_Y = 0.15f;
+        static unsigned long lastNavTime = 0;
+
+        if (millis() - lastNavTime >= 200)
+        {
+            bool moved = false;
+
+            // Y-axis: 0.0 to 1.0, center 0.5
+            if (jY > (0.5f + DEADZONE_Y) && menuCursorRow > 0)
+            {
+                menuCursorRow = 0;
+                moved = true;
+            }
+            else if (jY < (0.5f - DEADZONE_Y) && menuCursorRow < 1)
+            {
+                menuCursorRow = 1;
+                moved = true;
+            }
+
+            // X-axis: -1.0 to 1.0, center 0.0
+            if (jX < -DEADZONE_X && menuCursorCol > 0)
+            {
+                menuCursorCol--;
+                moved = true;
+            }
+            else if (jX > DEADZONE_X && menuCursorCol < 2)
+            {
+                menuCursorCol++;
+                moved = true;
+            }
+
+            if (moved)
+                lastNavTime = millis();
+        }
+
+        // === SELECT: Track button state locally (NOT wasButtonJustPressed!) ===
+        bool buttonIsPressed = Hardware.isButtonPressed(4);
+
+        // Detect FRESH press: was released, now pressed again
+        if (menuReadyForSelect && !menuButtonWasPressed && buttonIsPressed)
+        {
+            uint8_t newIndex = gridPosToIndex(menuCursorRow, menuCursorCol);
+            if (newIndex < NUM_INSTRUMENTS)
+            {
+                Serial.printf("  [System] Selected instrument %d\n", newIndex);
+                switchInstrument(newIndex);
+            }
+            instrumentMenuActive = false;
+            menuReadyForSelect = false;
+            menuButtonWasPressed = false;
+            Serial.println("  [Menu] CLOSE (selected)");
+        }
+
+        // Update state for next loop
+        menuButtonWasPressed = buttonIsPressed;
+    }
+    else
+    {
+        // === NORMAL MODE ===
+        float jX, jY;
+        Controls.readJoystick(jX, jY);
+        instruments[currentInstrument]->updateJoystick(jX, jY);
+    }
 
     // 5. UPDATE OLED (Limit to 10 FPS so it doesn't choke the ESP32)
     static unsigned long lastScreenUpdate = 0;
@@ -152,7 +238,16 @@ void SystemClass::inputTask()
 
 void SystemClass::updateScreen()
 {
-    display.update(instruments[currentInstrument], octaveShift, temperatureRead(), Hardware.getBatteryVoltage());
+    display.update(
+        instruments[currentInstrument], // activeInst
+        instruments,                    // all instruments array
+        NUM_INSTRUMENTS,                // count
+        currentInstrument,              // current index
+        instrumentMenuActive,           // menu flag
+        menuCursorRow, menuCursorCol,   // cursor position
+        octaveShift,                    // octave
+        Hardware.getBatteryVoltage()    // battery voltage
+    );
 }
 
 void SystemClass::switchInstrument(uint8_t index)

@@ -43,6 +43,25 @@ private:
         new InstrumentPiano(),
         new InstrumentBLE() // !!update isBleActive after moving this!!
     };
+
+    bool instrumentMenuActive = false;
+    uint8_t menuCursorRow = 0; // 0 or 1
+    uint8_t menuCursorCol = 0; // 0, 1, or 2
+    unsigned long menuLongPressStart = 0;
+    static constexpr unsigned long MENU_LONG_PRESS_MS = 800; // 0.8s to open menu
+
+    // Helper to get instrument index from grid position
+    uint8_t gridPosToIndex(uint8_t row, uint8_t col)
+    {
+        return row * 3 + col; // 3 columns per row
+    }
+
+    // Helper to get grid position from instrument index
+    void indexToGridPos(uint8_t index, uint8_t &row, uint8_t &col)
+    {
+        row = index / 3;
+        col = index % 3;
+    }
 };
 
 extern SystemClass System;
