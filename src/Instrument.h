@@ -26,6 +26,8 @@ class Instrument
 public:
     SynthParams params;
     bool isActive = false;
+    bool needsUIRedraw = false;
+    bool liveUI = false; // same thing but as needsUIRedraw but doesn't get reset by DisplayManager. currently just for sampler to avoid resetting needsUIRedraw from a thread.
 
     virtual ~Instrument() {}
 

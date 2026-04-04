@@ -18,6 +18,7 @@ void InstrumentPiano::start()
     amy_add_event(&e);
 
     Serial.printf("  [Piano] Ready\n");
+    needsUIRedraw = true;
 }
 
 void InstrumentPiano::stop()

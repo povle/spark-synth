@@ -128,6 +128,7 @@ void InstrumentDX7::start()
     e.volume = 4.0f;
     e.patch_number = patch + 128;
     amy_add_event(&e);
+    needsUIRedraw = true;
 
     Serial.printf("  [DX-7] Ready (patch %d)\n", patch);
 }
@@ -178,6 +179,7 @@ void InstrumentDX7::onPressedButton(uint8_t button_id)
     e.patch_number = patch + 128;
     amy_add_event(&e);
     Serial.printf("  [DX-7] Patch %d\n", patch);
+    needsUIRedraw = true;
 }
 
 void InstrumentDX7::sendAdsr()

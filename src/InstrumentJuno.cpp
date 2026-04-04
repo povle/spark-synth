@@ -37,6 +37,7 @@ void InstrumentJuno::start()
     updateOscAmps(JUNO_OSC_NOISE);
 
     Serial.printf("  [Juno] Ready (patch %d)\n", patch);
+    needsUIRedraw = true;
 }
 void InstrumentJuno::stop()
 {
@@ -141,6 +142,9 @@ void InstrumentJuno::updatePot(uint8_t channel, float value)
         config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
         break;
     }
+
+    if (channel < 12 || channel == 15)
+        needsUIRedraw = true;
 }
 
 void InstrumentJuno::updateOscAmps(int osc)

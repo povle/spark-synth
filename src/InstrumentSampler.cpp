@@ -70,6 +70,7 @@ void InstrumentSampler::start()
     {
         Serial.println("  [Sampler] Ready. Press Button 2 to record.");
     }
+    needsUIRedraw = true;
 }
 
 void InstrumentSampler::stop()
@@ -84,7 +85,6 @@ void InstrumentSampler::stop()
         }
     }
 
-    // Silence synth 3
     amy_event e = amy_default_event();
     e.synth = getSynthChannel();
     e.velocity = 0.0f;
@@ -159,6 +159,7 @@ void InstrumentSampler::onCustomPot(uint8_t channel, float value)
     {
         params.custom[channel] = value;
     }
+    needsUIRedraw = true;
 }
 
 void InstrumentSampler::onPressedButton(uint8_t button_id)
@@ -169,6 +170,7 @@ void InstrumentSampler::onPressedButton(uint8_t button_id)
     if (button_id == 2 && !isRecording)
     {
         startRecording();
+        needsUIRedraw = true;
     }
 }
 
@@ -376,6 +378,8 @@ void InstrumentSampler::startRecording()
     e.velocity = 0.0f;
     amy_add_event(&e);
 
+    liveUI = true;
+
     // 16KB stack for recording task
     BaseType_t result = xTaskCreatePinnedToCore(
         recordingTaskWrapper,
@@ -399,6 +403,7 @@ void InstrumentSampler::finishRecording()
 {
     Serial.println("  [Sampler] === FINISHING RECORDING ===");
     Serial.printf("  [Sampler] Captured: %lu samples @ %d Hz\n", sample_length, SAMPLE_RATE);
+    liveUI = false;
 
     if (sample_length > 0)
     {
@@ -450,6 +455,7 @@ void InstrumentSampler::finishRecording()
     {
         Serial.println("  [Sampler] Cancelled (0 samples)");
     }
+    needsUIRedraw = true;
 }
 void InstrumentSampler::setupSynthVoices()
 {

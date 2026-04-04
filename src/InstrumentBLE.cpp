@@ -13,12 +13,14 @@ public:
     {
         _inst->isConnected = true;
         Serial.println("  [BLE] Connected!");
+        needsUIRedraw = true;
     }
     void onDisconnect(BLEServer *pServer) override
     {
         _inst->isConnected = false;
         Serial.println("[BLE] Disconnected. Advertising...");
         pServer->startAdvertising();
+        needsUIRedraw = true;
     }
 };
 
@@ -51,6 +53,7 @@ void InstrumentBLE::start()
 {
     isActive = true;
     Serial.println("  [BLE] Ready. Waiting for connection...");
+    needsUIRedraw = true;
 }
 
 void InstrumentBLE::stop()
