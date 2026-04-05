@@ -9,6 +9,7 @@ public:
     InstrumentDX7()
     {
         _instrumentName = "DX7";
+        _instrumentShortName = "DX7";
     }
     void init() override;
     void start() override;

@@ -5,6 +5,7 @@
 InstrumentJuno::InstrumentJuno()
 {
     _instrumentName = "JUNO";
+    _instrumentShortName = "JUNO";
 }
 
 void InstrumentJuno::init()
@@ -131,7 +132,7 @@ void InstrumentJuno::updatePot(uint8_t channel, float value)
         };
 
         params.delay_freq = value * 2000.0f;
-        config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
+        config_echo(params.delay_amp, params.delay_freq, 3000.0f, params.delay_amp * 0.8f, 0.0f);
         break;
     case 14:
         if (value < 0.05)
@@ -139,7 +140,7 @@ void InstrumentJuno::updatePot(uint8_t channel, float value)
             value = 0;
         };
         params.delay_amp = value;
-        config_echo(params.delay_amp, params.delay_freq, params.delay_amp * 7.0f * params.delay_freq, params.delay_amp * 0.8f, 0.0f);
+        config_echo(params.delay_amp, params.delay_freq, 3000.0f, params.delay_amp * 0.8f, 0.0f);
         break;
     }
 

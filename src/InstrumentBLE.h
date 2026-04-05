@@ -13,6 +13,7 @@ public:
     InstrumentBLE()
     {
         _instrumentName = "BLE MIDI";
+        _instrumentShortName = "BLE";
     }
     void init() override;
     void start() override;

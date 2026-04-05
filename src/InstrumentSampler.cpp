@@ -3,6 +3,7 @@
 InstrumentSampler::InstrumentSampler()
 {
     _instrumentName = "SAMPLER";
+    _instrumentShortName = "SMPLR";
 }
 
 void InstrumentSampler::init()

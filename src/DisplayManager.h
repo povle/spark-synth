@@ -122,7 +122,7 @@ private:
         const uint8_t CELL_H = 23;
         const uint8_t MENU_Y = 12;
 
-        u8g2.setFont(u8g2_font_6x10_tr);
+        u8g2.setFont(u8g2_font_tenthinnerguys_tf);
 
         for (uint8_t row = 0; row < 2; row++) {
             for (uint8_t col = 0; col < 3; col++) {
@@ -141,9 +141,9 @@ private:
                     u8g2.drawFrame(x, y, CELL_W, CELL_H);
                 }
 
-                const char* name = (index < numInstruments) ? instruments[index]->getName() : "---";
+                const char *name = (index < numInstruments) ? instruments[index]->getShortName() : "---";
                 int textW = u8g2.getStrWidth(name);
-                u8g2.setCursor(x + (CELL_W - textW) / 2, y + (CELL_H + 7) / 2);
+                u8g2.setCursor(x + (CELL_W - textW) / 2, y + (CELL_H + 9) / 2);
                 u8g2.print(name);
                 u8g2.setDrawColor(1);
             }

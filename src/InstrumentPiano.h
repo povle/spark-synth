@@ -9,6 +9,7 @@ public:
     InstrumentPiano()
     {
         _instrumentName = "Piano";
+        _instrumentShortName = "Piano";
     }
     void init() override;
     void start() override;
