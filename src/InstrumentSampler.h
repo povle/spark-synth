@@ -51,7 +51,7 @@ private:
     uint16_t _amy_preset_num = 0;
 
     // Dynamic controls
-    float _sample_gain = 2.5f;
+    float _sample_gain = 3.5f;
     uint32_t _trim_start = 0; // Start of trimmed region (samples)
     uint32_t _trim_end = 0;   // End of trimmed region (samples)
 
@@ -61,7 +61,7 @@ private:
     static constexpr uint32_t TRIM_DEBOUNCE_MS = 150; // Wait 150ms after last change
 
     void reloadTrimmedSample();
-    void checkTrimReload(); // ← NEW: called from update()
+    void checkTrimReload();
 
     static void recordingTaskWrapper(void *arg);
     void startRecording();

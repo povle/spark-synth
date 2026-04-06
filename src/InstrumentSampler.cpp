@@ -122,10 +122,10 @@ void InstrumentSampler::noteOff(uint8_t note)
 
 void InstrumentSampler::onCustomPot(uint8_t channel, float value)
 {
-    // Knob 0: Amplification (0.0x to 5.0x)
+    // Knob 0: Amplification (0.0x to 7.0x)
     if (channel == 0)
     {
-        _sample_gain = 0.0f + (value * 5.0f);
+        _sample_gain = 0.0f + (value * 7.0f);
 
         amy_event e = amy_default_event();
         e.synth = getSynthChannel();
@@ -479,8 +479,9 @@ void InstrumentSampler::setupSynthVoices()
     e.num_voices = 8;
     e.volume = 6.0f;
     amy_add_event(&e);
-
     sendAllParams();
+
+    applyDefaultEQ();
 
     Serial.printf("  [Sampler] PCM synth configured (synth=%d, preset=%d)\n",
                   getSynthChannel(), _amy_preset_num);

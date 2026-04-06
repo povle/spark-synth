@@ -37,6 +37,7 @@ public:
     {
         isActive = true;
         sendAllParams();
+        applyDefaultEQ();
     }
 
     virtual void stop()
@@ -94,6 +95,18 @@ public:
     const char *getShortName()
     {
         return _instrumentShortName;
+    }
+
+    void applyDefaultEQ()
+    {
+        amy_event e = amy_default_event();
+        e.synth = 1;
+        e.volume = 4.0f;
+        e.eq_l = 4.0f;  // Boost lows slightly
+        e.eq_m = -3.0f; // Cut the harsh mid-range "honk"
+        e.eq_h = -6.0f; // Severely cut the high-frequency fizz
+        // TODO: we should detect if the 3.5 cable is connected and disable the EQ when it is.
+        amy_add_event(&e);
     }
 
     // Standardized Potentiometer Router
