@@ -17,10 +17,12 @@ void InstrumentJuno::start()
 {
     isActive = true;
 
-    // 1. Let AMY configure the base patch
     amy_event e = amy_default_event();
     e.synth = 1;
-    e.num_voices = 8;
+
+    // seem to be able to handle 5 voices without glitches
+    // less with effects active - maybe should add a check for that
+    e.num_voices = 5;
     e.patch_number = patch;
     amy_add_event(&e);
 
@@ -28,10 +30,11 @@ void InstrumentJuno::start()
 
     Controls.lockAllPots();
 
-    // 2. Load the state into our local struct
     state.loadFromSysex(patch);
 
-    // 3. WAKE UP THE OSCILLATORS
+    // we keep all the oscs always active even if not used in the patch
+    // to be able to always adjust them while a note is sustaining
+    // this does negatively affect the polyphony though
     updateOscDuty(JUNO_OSC_PWM);
     updateOscAmps(JUNO_OSC_PWM);
     updateOscAmps(JUNO_OSC_SAW);

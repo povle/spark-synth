@@ -20,7 +20,7 @@ void setup() {
     System.begin();
 
     xTaskCreatePinnedToCore(
-        input_task_wrapper, "InputTask", 4096, NULL, 5, &inputTaskHandle, 0
+        input_task_wrapper, "InputTask", 4096, NULL, 2, &inputTaskHandle, 0
     );
 }
 
