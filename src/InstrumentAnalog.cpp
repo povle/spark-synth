@@ -11,7 +11,6 @@ InstrumentAnalog::InstrumentAnalog()
 void InstrumentAnalog::init()
 {
     Serial.println("  [Analog] Initializing...");
-    // initFromPots();
     Serial.println("  [Analog] Init complete\n");
 }
 
@@ -19,6 +18,7 @@ void InstrumentAnalog::init()
 void InstrumentAnalog::start()
 {
     isActive = true;
+    initFromPots();
     setupSynthVoices();
     Serial.println("  [Analog] Ready");
 }
@@ -169,21 +169,75 @@ void InstrumentAnalog::updateOsc2Wave(uint8_t wave)
     amy_add_event(&e);
 }
 
+void InstrumentAnalog::initFromPots()
+{
+    float v;
+
+    // Pot 0: Osc 1 waveform (0-4)
+    v = Controls.getPotValue(0);
+    _osc1_wave = (uint8_t)(v * 4.99f);
+    if (_osc1_wave > 4)
+        _osc1_wave = 4;
+
+    // Pot 1: Osc 2 waveform
+    v = Controls.getPotValue(1);
+    _osc2_wave = (uint8_t)(v * 4.99f);
+    if (_osc2_wave > 4)
+        _osc2_wave = 4;
+
+    // Pot 2: Detune (0.0-1.0, center deadzone)
+    _osc2_detune = Controls.getPotValue(2);
+
+    // Pot 3: Balance
+    _osc_balance = Controls.getPotValue(3);
+
+    // Filter/ADSR via params
+    params.cutoff = 50.0f + Controls.getPotValue(4) * 8000.0f;
+    params.resonance = 0.5f + Controls.getPotValue(5) * 4.5f;
+    params.attack = Controls.getPotValue(8) * 2.0f;
+    params.decay = Controls.getPotValue(9) * 2.0f;
+    params.sustain = Controls.getPotValue(10);
+    params.release = Controls.getPotValue(11) * 5.0f;
+
+    // Noise/LFO params
+    params.noise = Controls.getPotValue(6);
+    params.lfo_freq = Controls.getPotValue(14);
+    params.lfo_amp = Controls.getPotValue(15);
+
+    Serial.println("  [Analog] Initialized from pot positions");
+}
+
 void InstrumentAnalog::updateOscDetune()
 {
-    float detune;
-    const float DETUNE_DEADZONE = 0.03;
-    if (_osc2_detune > 0.5 + DETUNE_DEADZONE)
-        detune = std::pow(2, (_osc2_detune-DETUNE_DEADZONE )*2.0f - 1.0f);
-    else if (_osc2_detune < 0.5 - DETUNE_DEADZONE)
-        detune = std::pow(2, (_osc2_detune + DETUNE_DEADZONE) * 2.0f - 1.0f);
+    const float DETUNE_DEADZONE = 0.03f;
+    const float HALF_RANGE = 0.5f - DETUNE_DEADZONE; // 0.47
+
+    float octaves;
+
+    if (_osc2_detune < 0.5f - DETUNE_DEADZONE)
+    {
+        // Lower half: map [0, 0.47] → [-1, 0] octaves
+        float t = _osc2_detune / HALF_RANGE; // 0→0, 0.47→1
+        octaves = t - 1.0f;                  // 0→-1, 1→0
+    }
+    else if (_osc2_detune > 0.5f + DETUNE_DEADZONE)
+    {
+        // Upper half: map [0.53, 1.0] → [0, +1] octaves
+        float t = (_osc2_detune - (0.5f + DETUNE_DEADZONE)) / HALF_RANGE;
+        octaves = t; // 0→0, 1→+1
+    }
     else
-        detune = 0;
+    {
+        octaves = 0.0f; // Deadzone
+    }
+
+    // Convert octaves to frequency multiplier (log2 space)
+    float freq_mult = powf(2.0f, octaves); // -1→0.5, 0→1.0, +1→2.0
 
     amy_event e = amy_default_event();
     e.synth = getSynthChannel();
     e.osc = OSC_2;
-    e.freq_coefs[COEF_CONST] = 440.0f * detune;
+    e.freq_coefs[COEF_CONST] = freq_mult * 440.0f;
     amy_add_event(&e);
 }
 

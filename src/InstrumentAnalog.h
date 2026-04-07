@@ -32,7 +32,7 @@ private:
     static constexpr uint8_t OSC_LFO_PITCH = 4;
 
     void setupSynthVoices();
-    // void initFromPots();
+    void initFromPots();
     void updateOsc1Wave(uint8_t wave);
     void updateOsc2Wave(uint8_t wave);
     void updateOscDetune();
