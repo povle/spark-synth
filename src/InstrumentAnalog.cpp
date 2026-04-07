@@ -39,66 +39,62 @@ void InstrumentAnalog::setupSynthVoices()
     e.patch_number = 1024;
     amy_add_event(&e);
 
-    // Osc 1
+    e = amy_default_event();
+    e.patch_number = 1024;
+    e.oscs_per_voice = 4;
+    e.synth = getSynthChannel();
+    e.num_voices = 8;
+    amy_add_event(&e);
+
+    // Osc 1 - with ADSR via EG0
     e = amy_default_event();
     e.osc = OSC_1;
-    e.patch_number = 1024;
+    e.synth = getSynthChannel();
     e.wave = _osc1_wave;
-    e.amp_coefs[COEF_CONST] = 0.5f;
+    e.amp_coefs[COEF_CONST] = 0.5f; // Base amplitude (scaled by balance)
+    e.amp_coefs[COEF_VEL] = 1.0f;   // Track note velocity
+    e.amp_coefs[COEF_EG0] = 1.0f;   // Track ADSR envelope (EG0)
     e.chained_osc = OSC_2;
     e.mod_source = OSC_LFO_FILTER;
     amy_add_event(&e);
 
-    // Osc 2
+    // Osc 2 - with ADSR via EG0
     e = amy_default_event();
     e.osc = OSC_2;
-    e.patch_number = 1024;
+    e.synth = getSynthChannel();
     e.wave = _osc2_wave;
     e.amp_coefs[COEF_CONST] = 0.5f;
+    e.amp_coefs[COEF_VEL] = 1.0f;
+    e.amp_coefs[COEF_EG0] = 1.0f;
     e.chained_osc = OSC_NOISE;
     e.mod_source = OSC_LFO_FILTER;
     amy_add_event(&e);
 
-    // Noise
+    // Noise - with ADSR via EG0
     e = amy_default_event();
     e.osc = OSC_NOISE;
-    e.patch_number = 1024;
+    e.synth = getSynthChannel();
     e.wave = NOISE;
     e.amp_coefs[COEF_CONST] = params.noise * 0.5f;
+    e.amp_coefs[COEF_VEL] = 1.0f;
+    e.amp_coefs[COEF_EG0] = 1.0f;
     e.chained_osc = OSC_LFO_FILTER;
     amy_add_event(&e);
 
-    // LFO Filter
+    // LFO Filter (silent modulator - no ADSR needed)
     e = amy_default_event();
     e.osc = OSC_LFO_FILTER;
-    e.patch_number = 1024;
+    e.synth = getSynthChannel();
     e.wave = SINE;
     e.freq_coefs[COEF_CONST] = params.lfo_freq * 10.0f;
     e.amp_coefs[COEF_CONST] = params.lfo_amp;
     e.freq_coefs[COEF_NOTE] = 0;
     e.amp_coefs[COEF_NOTE] = 0;
-    // e.chained_osc = OSC_LFO_PITCH;
     amy_add_event(&e);
 
-    e = amy_default_event();
-    e.patch_number = 1024;
-    e.filter_freq_coefs[COEF_MOD] = 1.0f;
-    amy_add_event(&e);
-
-    // // LFO Pitch
-    // e = amy_default_event();
-    // e.osc = OSC_LFO_PITCH;
-    // e.patch_number = 1024;
-    // e.wave = SINE;
-    // e.freq_coefs[COEF_CONST] = params.lfo_freq * 10.0f + 0.5f;
-    // e.amp_coefs[COEF_CONST] = _modWheel * params.lfo_amp;
-    // amy_add_event(&e);
-
-    // Synth config
     e = amy_default_event();
     e.synth = getSynthChannel();
-    e.patch_number = 1024;
-    e.num_voices = 8;
+    e.filter_freq_coefs[COEF_MOD] = 1.0f;
     amy_add_event(&e);
 
     applyDefaultEQ(4.0f);
@@ -149,6 +145,37 @@ void InstrumentAnalog::onCustomPot(uint8_t channel, float value)
         updateOscBalance();
         return;
     }
+}
+
+void InstrumentAnalog::sendAdsr()
+{
+    amy_event e = amy_default_event();
+    e.synth = getSynthChannel();
+
+    // Calculate times in ms using the Juno math curves, enforcing a 1ms minimum
+    uint16_t a_ms = (uint16_t)fmax(6.0f + 8.0f * (params.attack * 127.0f), 1.0f);
+    uint16_t d_ms = (uint16_t)fmax(80.0f * powf(2.0f, 0.085f * (params.decay * 127.0f)) - 80.0f, 1.0f);
+    uint16_t r_ms = (uint16_t)fmax(70.0f * powf(2.0f, 0.066f * (params.release * 127.0f)) - 70.0f, 1.0f);
+
+    // Pair 0: Attack
+    e.eg0_times[0] = a_ms;
+    e.eg0_values[0] = 1.0f;
+
+    // Pair 1: Decay to Sustain
+    e.eg0_times[1] = d_ms;
+    e.eg0_values[1] = params.sustain;
+
+    // Pair 2: Release to 0.0
+    e.eg0_times[2] = r_ms;
+    e.eg0_values[2] = 0.0f;
+
+
+    for (int i = 0; i < 4; i++)
+    {
+        e.osc = i;
+        amy_add_event(&e);
+    };
+
 }
 
 void InstrumentAnalog::updateOsc1Wave(uint8_t wave)

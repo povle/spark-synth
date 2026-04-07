@@ -36,6 +36,7 @@ private:
     void updateOsc1Wave(uint8_t wave);
     void updateOsc2Wave(uint8_t wave);
     void updateOscDetune();
+    void sendAdsr() override;
     void updateOscBalance();
     void applyPitchBend();
 };

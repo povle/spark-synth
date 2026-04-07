@@ -170,11 +170,11 @@ public:
 
         // ADSR (8-11)
         case 8:
-            params.attack = value * 2.0f;
+            params.attack = value;
             updateAdsr = true;
             break;
         case 9:
-            params.decay = value * 2.0f;
+            params.decay = value;
             updateAdsr = true;
             break;
         case 10:
@@ -182,7 +182,7 @@ public:
             updateAdsr = true;
             break;
         case 11:
-            params.release = value * 5.0f;
+            params.release = value;
             updateAdsr = true;
             break;
 
@@ -247,28 +247,25 @@ protected:
     }
     virtual void configLfo() {}
 
-    // THE PROPER ADSR ARRAY LOGIC
-    // Virtual so subclasses (like Organ) can override if they don't use e.synth
     virtual void sendAdsr()
     {
         amy_event e = amy_default_event();
         e.synth = getSynthChannel();
 
-        // Convert seconds to milliseconds (ensure minimum of 1ms to prevent audio glitches)
-        uint16_t a_ms = (uint16_t)fmax(params.attack * 1000.0f, 1.0f);
-        uint16_t d_ms = (uint16_t)fmax(params.decay * 1000.0f, 1.0f);
-        uint16_t r_ms = (uint16_t)fmax(params.release * 1000.0f, 1.0f);
-        Serial.printf("Updating ADSR: %d %d %f %d\n", a_ms, d_ms, params.sustain, r_ms);
+        // Calculate times in ms using the Juno math curves, enforcing a 1ms minimum
+        uint16_t a_ms = (uint16_t)fmax(6.0f + 8.0f * (params.attack * 127.0f), 1.0f);
+        uint16_t d_ms = (uint16_t)fmax(80.0f * powf(2.0f, 0.085f * (params.decay * 127.0f)) - 80.0f, 1.0f);
+        uint16_t r_ms = (uint16_t)fmax(70.0f * powf(2.0f, 0.066f * (params.release * 127.0f)) - 70.0f, 1.0f);
 
-        // Pair 0: Delta time to reach Attack Peak (1.0)
+        // Pair 0: Attack
         e.eg0_times[0] = a_ms;
         e.eg0_values[0] = 1.0f;
 
-        // Pair 1: Delta time to drop to Sustain Level
+        // Pair 1: Decay to Sustain
         e.eg0_times[1] = d_ms;
         e.eg0_values[1] = params.sustain;
 
-        // Pair 2: Time to drop to 0.0 (AMY automatically waits for Note Off for the last pair)
+        // Pair 2: Release to 0.0
         e.eg0_times[2] = r_ms;
         e.eg0_values[2] = 0.0f;
 
