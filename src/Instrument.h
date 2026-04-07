@@ -18,6 +18,9 @@ struct SynthParams
     float reverb = 0.0f;
     float delay_amp = 0.0f;
     float delay_freq = 0.0f;
+    float noise = 0.0f;
+    float lfo_amp = 0.0f;
+    float lfo_freq = 0.0f;
     float custom[4] = {0.5f, 0.5f, 0.5f, 0.5f};
 };
 
@@ -85,7 +88,11 @@ public:
         e.synth = getSynthChannel();
         e.pitch_bend = bendRatio;
         amy_add_event(&e);
+
+        updateJoystickY(y);
     }
+
+    virtual void updateJoystickY(float y) {};
 
     const char *getName()
     {
@@ -95,6 +102,18 @@ public:
     const char *getShortName()
     {
         return _instrumentShortName;
+    }
+
+    void applyDefaultEQ(float volume)
+    {
+        amy_event e = amy_default_event();
+        e.synth = 1;
+        e.volume = volume;
+        e.eq_l = 4.0f;  // Boost lows slightly
+        e.eq_m = -3.0f; // Cut the harsh mid-range "honk"
+        e.eq_h = -6.0f; // Severely cut the high-frequency fizz
+        // TODO: we should detect if the 3.5 cable is connected and disable the EQ when it is.
+        amy_add_event(&e);
     }
 
     void applyDefaultEQ()
@@ -115,6 +134,8 @@ public:
         Serial.printf("Knob %d moved to %f\n", channel, value);
         bool updateAdsr = false;
         bool updateFilter = false;
+        bool updateLfo = false;
+        bool updateNoise = false;
 
         switch (channel)
         {
@@ -135,6 +156,16 @@ public:
         case 5:
             params.resonance = 0.5f + (value * 4.5f);
             updateFilter = true;
+            break;
+
+        // LFO (6-7)
+        case 6:
+            params.lfo_freq = value;
+            updateLfo = true;
+            break;
+        case 7:
+            params.lfo_amp = value;
+            updateLfo = true;
             break;
 
         // ADSR (8-11)
@@ -179,6 +210,10 @@ public:
             params.delay_amp = value;
             config_echo(params.delay_amp, params.delay_freq, 3000.0f, params.delay_amp * 0.8f, 0.0f);
             break;
+        case 15:
+            params.noise = value;
+            updateNoise = true;
+            break;
         }
 
         // Only send updates to AMY if the instrument is currently active on screen
@@ -188,6 +223,10 @@ public:
                 sendAdsr();
             if (updateFilter)
                 sendFilter();
+            if (updateNoise)
+                configNoise();
+            if (updateLfo)
+                configLfo();
         }
     }
 
@@ -197,6 +236,16 @@ protected:
 
     virtual uint8_t getSynthChannel() { return 1; }
     virtual void onCustomPot(uint8_t channel, float value) {}
+
+    virtual void configNoise()
+    {
+        // if noise is not used might as well use it for volume
+        amy_event e = amy_default_event();
+        e.synth = getSynthChannel();
+        e.volume = params.noise * 7.0f;
+        amy_add_event(&e);
+    }
+    virtual void configLfo() {}
 
     // THE PROPER ADSR ARRAY LOGIC
     // Virtual so subclasses (like Organ) can override if they don't use e.synth

@@ -11,8 +11,9 @@
 #include "InstrumentJuno.h"
 #include "InstrumentBLE.h"
 #include "InstrumentSampler.h"
+#include "InstrumentAnalog.h"
 
-#define NUM_INSTRUMENTS 5
+#define NUM_INSTRUMENTS 6
 
 class SystemClass
 {
@@ -41,7 +42,8 @@ private:
         new InstrumentJuno(),
         new InstrumentSampler(),
         new InstrumentPiano(),
-        new InstrumentBLE() // !!update isBleActive after moving this!!
+        new InstrumentBLE(), // !!update isBleActive after moving this!!
+        new InstrumentAnalog()
     };
 
     bool instrumentMenuActive = false;

@@ -21,6 +21,7 @@ class ControlsClass
 public:
     void begin();
     bool readPot(uint8_t channel, float &value);
+    float getPotValue(uint8_t channel);
     void applyToHardware(uint8_t channel, float value);
     void readJoystick(float &x, float &y);
 

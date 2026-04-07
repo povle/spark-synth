@@ -122,3 +122,13 @@ bool ControlsClass::readPot(uint8_t channel, float &value)
 
     return false;
 }
+
+float ControlsClass::getPotValue(uint8_t channel)
+{
+    if (channel >= NUM_POTS)
+        return 0.5f;
+
+    // Return the smoothed value directly (no threshold check)
+    // This is safe for init/patch loading where we want current position
+    return smoothedValues[channel];
+}
