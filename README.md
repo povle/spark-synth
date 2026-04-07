@@ -6,6 +6,6 @@ It uses the amazing [AMY Synth engine](https://github.com/shorepine/amy) for eve
 
 The keybed is a low-profile mechanical keyboard (in my build I used Keychron Low Profile Silent). It also has a joystick for pitch-bends and 16 pots.
 
-Hardware files coming soon (as soon as i get around to it).
+[The hardware files are in a separate repo](https://github.com/povle/spark-synth-hardware).
 Big disclaimer: at this stage this is not an easy DIY build, it's a prototype with a rat's nest of wires inside.
 I am planning a v2 with custom PCBs for everything, right now i'm using a custom PCB only for the pots.
